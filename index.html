@@ -1047,51 +1047,48 @@ function loginWithGoogle(role) {
     });
 }
 
+// ✅ SUBSTITUA POR:
 function openLoginExisting() {
+  const stored = JSON.parse(localStorage.getItem('dt_user') || 'null');
+
+  // Se já tem sessão salva com Google, restaura direto
+  if (stored && stored.googleAuth && stored.id) {
+    db.ref('suspensions/' + stored.id).once('value').then(snap => {
+      const data = snap.val();
+      if (data && data.banned) { showBannedScreen(data); return; }
+      userProfile = stored;
+      applyProfile();
+      toast('Bem-vindo de volta, ' + stored.name + '!');
+    }).catch(() => {
+      userProfile = stored;
+      applyProfile();
+    });
+    return;
+  }
+
+  // Fluxo para contas locais (sem Google)
   const nome = prompt('Nome de usuário:');
   if (!nome || !nome.trim()) { toast('Informe seu nome de usuário', 'error'); return; }
   const senha = prompt('Senha:');
   if (!senha) { toast('Informe sua senha', 'error'); return; }
-  const stored = JSON.parse(localStorage.getItem('dt_user') || 'null');
+
   if (stored && stored.name === nome.trim() && stored.localPass === senha) {
-    userProfile = stored;
-    applyProfile();
+    db.ref('suspensions/' + stored.id).once('value').then(snap => {
+      const data = snap.val();
+      if (data && data.banned) { showBannedScreen(data); return; }
+      userProfile = stored;
+      applyProfile();
+    }).catch(() => {
+      userProfile = stored;
+      applyProfile();
+    });
   } else {
     toast('Usuário ou senha incorretos', 'error');
   }
 }
 
-  // Apple e Facebook: adaptar com os respectivos providers do Firebase
-  toast('Provider ' + provider + ' em breve!', 'error');
-}
-  const btn = document.getElementById('btn-google-login');
-  btn.disabled = true;
-  btn.innerHTML = '<div class="google-spinner"></div> Entrando com Google…';
 
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-  provider.addScope('email');
-  provider.addScope('profile');
 
-  auth.signInWithPopup(provider)
-    .then(result => handleGoogleResult(result, role))
-    .catch(err => {
-      if (err.code === 'auth/popup-blocked') {
-        sessionStorage.setItem('dt_pending_role', role || 'customer');
-        auth.signInWithRedirect(provider);
-        return;
-      }
-      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        resetGoogleBtn(); return;
-      }
-      resetGoogleBtn();
-      let msg = 'Erro ao entrar com Google.';
-      if (err.code === 'auth/unauthorized-domain') msg = 'Domínio não autorizado. Adicione no Firebase Console.';
-      else if (err.message) msg = err.message;
-      toast(msg, 'error');
-      console.error('Google Login Error:', err.code, err.message);
-    });
-}
 
 function handleGoogleResult(result, role) {
   const user = result.user;
@@ -1325,12 +1322,20 @@ function changeProfilePhoto() {
 
 function setupOrdersListener() {
   if (!userProfile) return;
-  db.ref('orders').orderByChild('customerId').equalTo(userProfile.id).on('value', snap => {
-    const orders = snap.val() || {};
-    const hasActive = Object.values(orders).some(o => o.status && o.status !== 'delivered');
-    document.getElementById('orders-notif').style.display = hasActive ? 'block' : 'none';
-    if (document.getElementById('orders').classList.contains('active')) renderOrdersList(orders);
-  });
+
+db.ref('orders').orderByChild('customerId').equalTo(userProfile?.id || '').on('value', snap => {
+  const orders = snap.val() || {};
+  const hasActive = Object.values(orders).some(o => o.status && o.status !== 'delivered');
+
+  const notifEl = document.getElementById('orders-notif');
+  if (notifEl) notifEl.style.display = hasActive ? 'block' : 'none';
+
+  const ordersPage = document.getElementById('orders');
+  const listEl = document.getElementById('orders-list');
+  if (ordersPage && listEl && ordersPage.classList.contains('active')) {
+    renderOrdersList(orders);
+  }
+});
 }
 
 // ══════════════════════════════════════════════
@@ -2045,15 +2050,28 @@ function checkLocalStoreStatus() {
     const prods = store.products || {};
     const container = document.getElementById('my-products-list');
     if (!Object.keys(prods).length) { container.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">Nenhum prato cadastrado ainda</p>'; return; }
-    container.innerHTML = Object.entries(prods).map(([key, p]) => `<div class="product-row">
-      <img src="${p.img || ''}" class="product-row-img" onerror="this.src=''" alt="">
-      <div class="product-row-info"><strong>${esc(p.name)}</strong><span>R$ ${parseFloat(p.price).toFixed(2)}</span></div>
-      <button class="product-row-del" onclick="db.ref('stores/${myId}/products/${key}').remove()"><span class="material-icons-round">delete</span></button>
-    </div>`).join('');
+      container.innerHTML = Object.entries(prods).map(([key, p]) => `<div class="product-row">
+  <img src="${p.img || ''}" class="product-row-img" onerror="this.src=''" alt="">
+  <div class="product-row-info">
+    <strong>${esc(p.name)}</strong>
+    <span>R$ ${parseFloat(p.price).toFixed(2)}</span>
+  </div>
+  <button class="product-row-del" onclick="deleteMyProduct('${myId}','${key}')">
+    <span class="material-icons-round">delete</span>
+  </button>
+</div>`).join('');
   } else {
     document.getElementById('form-loja').style.display = 'block';
     document.getElementById('form-produtos').style.display = 'none';
   }
+}
+
+
+function deleteMyProduct(storeId, productKey) {
+  if (!storeId || !productKey) return;
+  db.ref('stores/' + storeId + '/products/' + productKey).remove()
+    .then(() => toast('Prato removido!'))
+    .catch(() => toast('Erro ao remover prato', 'error'));
 }
 
 function deleteMyStore() {
@@ -2550,8 +2568,16 @@ function loadSAConversations() {
   db.ref('support').on('value', saConvListener);
 }
 
+
 function openSAChat(convId, userName, userPhotoURL, userId) {
-  if (saChatMsgListener && saActiveChatConvId) { db.ref('support/' + saActiveChatConvId + '/messages').off('value', saChatMsgListener); saChatMsgListener = null; }
+  // Limpa listener anterior independente de saActiveChatConvId
+  if (saChatMsgListener) {
+    if (saActiveChatConvId) {
+      db.ref('support/' + saActiveChatConvId + '/messages')
+        .off('value', saChatMsgListener);
+    }
+    saChatMsgListener = null;
+  }
   saActiveChatConvId = convId;
   saActiveChatUserId = userId;
   saActiveChatUserName = userName;
@@ -2688,19 +2714,31 @@ function renderSuperAdminStores() {
   const stores = Object.values(storesData);
   const totalProds = stores.reduce((a, s) => a + Object.keys(s.products || {}).length, 0);
   const totalRevs = stores.reduce((a, s) => a + Object.keys(s.reviews || {}).length, 0);
+
   const statsEl = document.getElementById('sa-stats');
-  if (statsEl) statsEl.innerHTML = `
-    <div class="sa-stat"><div class="sa-stat-num">${stores.length}</div><div class="sa-stat-label">Lojas</div></div>
-    <div class="sa-stat"><div class="sa-stat-num">${totalProds}</div><div class="sa-stat-label">Pratos</div></div>
-    <div class="sa-stat"><div class="sa-stat-num">${totalRevs}</div><div class="sa-stat-label">Reviews</div></div>
-  `;
-  const list = document.getElementById('sa-store-list'); if (!list) return;
-  if (!stores.length) { list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4)"><span class="material-icons-round" style="font-size:40px;display:block;margin-bottom:8px;opacity:.4">store_mall_directory</span>Nenhum restaurante cadastrado</div>`; return; }
+  if (statsEl && saCurrentPanel === 'stores') {
+    statsEl.innerHTML = `
+      <div class="sa-stat"><div class="sa-stat-num">${stores.length}</div><div class="sa-stat-label">Lojas</div></div>
+      <div class="sa-stat"><div class="sa-stat-num">${totalProds}</div><div class="sa-stat-label">Pratos</div></div>
+      <div class="sa-stat"><div class="sa-stat-num">${totalRevs}</div><div class="sa-stat-label">Reviews</div></div>
+    `;
+  }
+
+  const list = document.getElementById('sa-store-list');
+  if (!list) return;
+
+  if (!stores.length) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4)"><span class="material-icons-round" style="font-size:40px;display:block;margin-bottom:8px;opacity:.4">store_mall_directory</span>Nenhum restaurante cadastrado</div>`;
+    return;
+  }
+
   list.innerHTML = stores.map(s => {
-    const prodCount = Object.keys(s.products || {}).length, revCount = Object.keys(s.reviews || {}).length;
+    const prodCount = Object.keys(s.products || {}).length;
+    const revCount = Object.keys(s.reviews || {}).length;
     const { avg } = getStoreRating(s.id);
     const typeLabel = s.type === 'restaurant' ? 'Restaurante' : 'Delivery';
-    const saLocParts = [s.city, s.state, s.country].filter(Boolean); const saLoc = saLocParts.join(', ');
+    const saLocParts = [s.city, s.state, s.country].filter(Boolean);
+    const saLoc = saLocParts.join(', ');
     return `<div class="sa-store-row" id="sa-row-${s.id}">
       <img src="${s.logo || ''}" class="sa-store-logo" onerror="this.src=''" alt="">
       <div class="sa-store-info">
@@ -2709,7 +2747,9 @@ function renderSuperAdminStores() {
         ${saLoc ? `<span style="font-size:10px;opacity:.5">📍 ${esc(saLoc)}${s.address ? ' — ' + esc(s.address) : ''}</span>` : s.address ? `<span style="font-size:10px;opacity:.5">📍 ${esc(s.address)}</span>` : ''}
         ${s.phone ? `<span style="font-size:10px;opacity:.5">📞 ${esc(s.phone)}</span>` : ''}
       </div>
-      <button class="sa-del-btn" onclick="superAdminDeleteStore('${s.id}','${esc(s.name)}')"><span class="material-icons-round">delete_forever</span></button>
+      <button class="sa-del-btn" onclick="superAdminDeleteStore('${s.id}','${esc(s.name)}')">
+        <span class="material-icons-round">delete_forever</span>
+      </button>
     </div>`;
   }).join('');
 }
