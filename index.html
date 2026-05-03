@@ -548,23 +548,23 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       <h3>🍔 Quero pedir comida</h3>
       <p>Explore restaurantes e lojas perto de você</p>
     </div>
-    <button class="ob-btn-google" id="btn-google-login" onclick="loginWithGoogle('customer')" style="margin-bottom:12px">
-      <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-        <path fill="none" d="M0 0h48v48H0z"/>
-      </svg>
-      Continuar com Google
-    </button>
-    <div class="ob-separator">— ou entre sem Google —</div>
-    <button class="ob-btn ob-btn-primary" onclick="startOnboarding('customer')" style="margin-top:12px;margin-bottom:8px">
-      <span class="material-icons-round">person</span> Sou cliente (nome)
-    </button>
-    <button class="ob-btn ob-btn-ghost" onclick="startOnboarding('owner')" style="margin-top:4px">
-      <span class="material-icons-round">storefront</span> Tenho um restaurante
-    </button>
+   <button class="ob-btn-google" id="btn-google-login" onclick="loginWithProvider('google')">
+  <!-- SVG Google aqui --> Continuar com Google
+</button>
+
+<button class="ob-btn-google" id="btn-apple-login" onclick="loginWithProvider('apple')" style="background:#000;color:white;margin-top:10px">
+  <span class="material-icons-round">apple</span> Continuar com Apple
+</button>
+
+<button class="ob-btn-google" id="btn-facebook-login" onclick="loginWithProvider('facebook')" style="background:#1877F2;color:white;margin-top:10px">
+  <span class="material-icons-round">facebook</span> Continuar com Facebook
+</button>
+
+<div class="ob-separator" style="margin-top:16px">— ou —</div>
+
+<button class="ob-btn ob-btn-ghost" onclick="openLoginExisting()" style="margin-top:12px">
+  <span class="material-icons-round">login</span> Já possuo uma conta
+</button>
   </div>
 </section>
 
@@ -1047,6 +1047,52 @@ function loginWithGoogle(role) {
     });
 }
 
+function openLoginExisting() {
+  const nome = prompt('Nome de usuário:');
+  if (!nome || !nome.trim()) { toast('Informe seu nome de usuário', 'error'); return; }
+  const senha = prompt('Senha:');
+  if (!senha) { toast('Informe sua senha', 'error'); return; }
+  const stored = JSON.parse(localStorage.getItem('dt_user') || 'null');
+  if (stored && stored.name === nome.trim() && stored.localPass === senha) {
+    userProfile = stored;
+    applyProfile();
+  } else {
+    toast('Usuário ou senha incorretos', 'error');
+  }
+}
+
+  // Apple e Facebook: adaptar com os respectivos providers do Firebase
+  toast('Provider ' + provider + ' em breve!', 'error');
+}
+  const btn = document.getElementById('btn-google-login');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="google-spinner"></div> Entrando com Google…';
+
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  provider.addScope('email');
+  provider.addScope('profile');
+
+  auth.signInWithPopup(provider)
+    .then(result => handleGoogleResult(result, role))
+    .catch(err => {
+      if (err.code === 'auth/popup-blocked') {
+        sessionStorage.setItem('dt_pending_role', role || 'customer');
+        auth.signInWithRedirect(provider);
+        return;
+      }
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        resetGoogleBtn(); return;
+      }
+      resetGoogleBtn();
+      let msg = 'Erro ao entrar com Google.';
+      if (err.code === 'auth/unauthorized-domain') msg = 'Domínio não autorizado. Adicione no Firebase Console.';
+      else if (err.message) msg = err.message;
+      toast(msg, 'error');
+      console.error('Google Login Error:', err.code, err.message);
+    });
+}
+
 function handleGoogleResult(result, role) {
   const user = result.user;
   return db.ref('suspensions/' + user.uid).once('value').then(snap => {
@@ -1064,19 +1110,56 @@ function handleGoogleResult(result, role) {
       finalRole = existingRole || role || 'customer';
     }
 
-    userProfile = {
-      name: user.displayName || user.email.split('@')[0],
-      role: finalRole,
-      storeId: email === ADMIN_EMAIL.toLowerCase() ? null : (existingStoreId || null),
-      id: user.uid,
-      email: user.email,
-      photoURL: user.photoURL || null,
-      googleAuth: true
-    };
-    localStorage.setItem('dt_user', JSON.stringify(userProfile));
-    resetGoogleBtn();
-    applyProfile();
+const pendingPass = sessionStorage.getItem('dt_pending_pass') || null;
+sessionStorage.removeItem('dt_pending_pass');
+sessionStorage.removeItem('dt_pending_name');
+userProfile = {
+  localPass: pendingPass,
+  name: user.displayName || user.email.split('@')[0],
+  role: finalRole,
+  storeId: email === ADMIN_EMAIL.toLowerCase() ? null : (existingStoreId || null),
+  id: user.uid,
+  email: user.email,
+  photoURL: user.photoURL || null,
+  googleAuth: true
+};
+localStorage.setItem('dt_user', JSON.stringify(userProfile));
+resetGoogleBtn();
+applyProfile();
   });
+}
+
+async function loginWithProvider(provider) {
+  const name = prompt('Qual é o seu nome?', '');
+  if (!name || !name.trim()) { toast('Informe seu nome', 'error'); return; }
+
+  const senha = prompt('Crie uma senha:');
+  if (!senha || senha.length < 6) { toast('Senha deve ter ao menos 6 caracteres', 'error'); return; }
+
+  const confirma = prompt('Confirme sua senha:');
+  if (senha !== confirma) { toast('As senhas não coincidem', 'error'); return; }
+
+  const tipo = confirm('Você possui um estabelecimento?\nOK = Sim\nCancelar = Sou cliente');
+  const role = tipo ? 'owner' : 'customer';
+
+  sessionStorage.setItem('dt_pending_name', name.trim());
+  sessionStorage.setItem('dt_pending_role', role);
+  sessionStorage.setItem('dt_pending_pass', senha);
+
+  if (provider === 'google') {
+    loginWithGoogle(role);
+    return;
+  }
+
+  if (provider === 'apple') {
+    const appleProvider = new firebase.auth.OAuthProvider('apple.com');
+    auth.signInWithPopup(appleProvider).then(result => handleGoogleResult(result, role));
+  }
+
+  if (provider === 'facebook') {
+    const fbProvider = new firebase.auth.FacebookAuthProvider();
+    auth.signInWithPopup(fbProvider).then(result => handleGoogleResult(result, role));
+  }
 }
 
 function resetGoogleBtn() {
