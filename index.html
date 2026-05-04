@@ -2200,15 +2200,99 @@ async function banUserDirectly(userId, userName, reason) {
   }
 }
 
+// ══════════════════════════════════════════════
+//  BAN WATCHER — reativo em tempo real
+// ══════════════════════════════════════════════
+let banWatcherRef = null;
+
 function startBanWatcher() {
   if (!userProfile) return;
-  db.ref('suspensions/' + userProfile.id).on('value', snap => {
-    const data = snap.val(); if (!data) return;
-    userProfile.suspensions = data.count || 0; userProfile.banned = data.banned || false;
-    localStorage.setItem('dt_user', JSON.stringify(userProfile));
-    if (data.banned) showBannedScreen(data);
+  // Remove listener anterior se existir
+  if (banWatcherRef) {
+    db.ref('suspensions/' + userProfile.id).off('value', banWatcherRef);
+  }
+
+  banWatcherRef = db.ref('suspensions/' + userProfile.id).on('value', snap => {
+    const data = snap.val();
+
+    // Sem dados = sem suspensão
+    if (!data) {
+      // Se estava na tela de banimento, restaura
+      if (document.getElementById('banned-screen').style.display === 'flex') {
+        restoreFromBan();
+      }
+      return;
+    }
+
+    const isBanned = data.banned === true;
+
+    // Atualiza perfil local
+    if (userProfile) {
+      userProfile.suspensions = data.count || 0;
+      userProfile.banned = isBanned;
+      localStorage.setItem('dt_user', JSON.stringify(userProfile));
+    }
+
+    const bannedScreenVisible = document.getElementById('banned-screen').style.display === 'flex';
+
+    if (isBanned && !bannedScreenVisible) {
+      // Precisa banir — exibe tela
+      showBannedScreen(data);
+    } else if (!isBanned && bannedScreenVisible) {
+      // Ban foi levantado — restaura acesso
+      restoreFromBan();
+    }
   });
 }
+
+function restoreFromBan() {
+  const screen = document.getElementById('banned-screen');
+  screen.classList.remove('visible');
+  screen.style.display = 'none';
+
+  // Remove bloqueio de teclado
+  document.removeEventListener('keydown', trapBannedKeyboard, true);
+
+  // Restaura botões do onboarding
+  document.querySelectorAll('.ob-btn, .ob-btn-google').forEach(btn => {
+    btn.disabled = false;
+    btn.style.pointerEvents = '';
+    btn.style.opacity = '';
+  });
+
+  // Restaura navegação
+  window.onpopstate = null;
+
+  // Atualiza estado local
+  if (userProfile) {
+    userProfile.banned = false;
+    userProfile.suspensions = 0;
+    localStorage.setItem('dt_user', JSON.stringify(userProfile));
+  }
+
+  // Reinicia a interface
+  applyProfile();
+  toast('✅ Acesso restaurado!');
+}
+
+async function liftBan(ownerId) {
+  if (!confirm('Levantar o banimento deste usuário?')) return;
+
+  // Zera completamente no Firebase
+  await db.ref('suspensions/' + ownerId).set({
+    banned: false,
+    count: 0,
+    history: [],
+    ownerName: (await db.ref('suspensions/' + ownerId + '/ownerName').once('value')).val() || 'Usuário'
+  });
+
+  toast('Banimento levantado');
+  renderSuspensionsList();
+
+  // Se o usuário banido É o usuário atual, o listener do startBanWatcher
+  // vai detectar a mudança automaticamente e chamar restoreFromBan()
+}
+
 
 function showBannedScreen(data) {
   const screen = document.getElementById('banned-screen');
@@ -2244,24 +2328,17 @@ function showBannedScreen(data) {
 
 function trapBannedKeyboard(e) { if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) e.preventDefault(); }
 
-async function renderSuspensionsList() {
-  const snap = await db.ref('suspensions').once('value');
-  const data = snap.val() || {};
-  const el = document.getElementById('sa-suspensions-list'); if (!el) return;
-  const entries = Object.entries(data);
-  if (!entries.length) { el.innerHTML = `<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0;text-align:center">Nenhuma suspensão registrada</p>`; return; }
-  el.innerHTML = entries.sort((a, b) => b[1].count - a[1].count).map(([ownerId, s]) => {
-    const pct = Math.min((s.count / MAX_SUSPENSIONS) * 100, 100);
-    const color = s.banned ? '#FF3D2E' : s.count === 2 ? '#F59E0B' : '#1A9E5E';
-    return `<div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div><span style="font-size:14px;font-weight:600;color:white">${esc(s.ownerName)}</span>${s.banned ? `<span style="font-size:10px;background:rgba(255,61,46,.2);color:var(--accent);border:1px solid rgba(255,61,46,.3);border-radius:100px;padding:2px 8px;margin-left:8px;font-weight:700">BANIDO</span>` : ''}</div>
-        <span style="font-size:13px;font-weight:800;color:${color};font-family:var(--font-display)">${s.count}/${MAX_SUSPENSIONS}</span>
-      </div>
-      <div style="height:4px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .4s"></div></div>
-      ${s.banned ? `<button onclick="liftBan('${ownerId}')" style="margin-top:10px;width:100%;background:rgba(26,158,94,.12);border:1px solid rgba(26,158,94,.3);color:#1A9E5E;padding:8px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer">Levantar banimento</button>` : ''}
-    </div>`;
-  }).join('');
+async function liftBan(ownerId) {
+  if (!confirm('Levantar o banimento deste usuário?')) return;
+  const nameSnap = await db.ref('suspensions/' + ownerId + '/ownerName').once('value');
+  await db.ref('suspensions/' + ownerId).set({
+    banned: false,
+    count: 0,
+    history: [],
+    ownerName: nameSnap.val() || 'Usuário'
+  });
+  toast('Banimento levantado');
+  renderSuspensionsList();
 }
 
 async function liftBan(ownerId) {
