@@ -295,6 +295,10 @@ nav button .material-icons-round{font-size:22px}
 
 /* LOADER */
 .loader-wrap{display:flex;align-items:center;justify-content:center;padding:40px;gap:8px}
+/* SKELETON */
+@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+.skeleton{background:linear-gradient(90deg,var(--border) 25%,rgba(0,0,0,0.04) 50%,var(--border) 75%);
+  background-size:600px 100%;animation:shimmer 1.4s infinite;border-radius:8px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:bounce 1s infinite}
 .dot:nth-child(2){animation-delay:.15s}
 .dot:nth-child(3){animation-delay:.3s}
@@ -536,6 +540,27 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 </head>
 <body>
 
+<!-- SPLASH SCREEN -->
+<div id="splash-screen" style="position:fixed;inset:0;z-index:99999;background:#131110;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="font-family:var(--font-display);font-size:52px;font-weight:800;
+    color:white;letter-spacing:-2px;line-height:1">
+    Delivra<em style="color:#FF3D2E;font-style:normal">Tech</em>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <div style="width:8px;height:8px;border-radius:50%;background:#FF3D2E;
+      animation:splashDot 1s infinite"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:#FF3D2E;
+      animation:splashDot 1s infinite .15s"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:#FF3D2E;
+      animation:splashDot 1s infinite .3s"></div>
+  </div>
+</div>
+<style>
+@keyframes splashDot{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-8px);opacity:1}}
+@keyframes splashFade{from{opacity:1}to{opacity:0;pointer-events:none}}
+</style>
+
 <!-- ONBOARDING -->
 <section id="onboarding" style="display:flex">
   <div class="ob-bg"></div>
@@ -626,9 +651,11 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
   <div class="scroll-pad"></div>
 </section>
 
+
 <!-- ORDERS PAGE -->
 <section id="orders" class="page">
-   <div class="orders-hero" style="display:flex;flex-direction:column;align-items:flex-start">
+  <div class="orders-page">
+    <div class="orders-hero" style="display:flex;flex-direction:column;align-items:flex-start">
       <h2>Meus Pedidos</h2>
       <p>Acompanhe em tempo real</p>
       <button id="clear-orders-btn" onclick="clearOrdersHistory()"
@@ -641,6 +668,10 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
         Limpar histórico
       </button>
     </div>
+    <div id="orders-list" style="padding-top:4px">
+      <div class="loader-wrap"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
 </section>
 
 <!-- SUPPORT PAGE -->
@@ -649,20 +680,20 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
     <h2>Central de<br><em>Suporte</em></h2>
     <p>Fale conosco — respondemos rapidinho!</p>
     <div class="support-status-bar">
-      <button id="clear-support-btn" onclick="clearSupportHistory()"
-    style="display:none;margin-top:14px;background:rgba(255,255,255,.07);
-    border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.5);
-    padding:7px 14px;border-radius:100px;font-size:12px;font-weight:600;
-    font-family:var(--font-body);cursor:pointer;display:inline-flex;
-    align-items:center;gap:6px;transition:all .2s"
-    onmouseover="this.style.background='rgba(255,61,46,.2)'"
-    onmouseout="this.style.background='rgba(255,255,255,.07)'">
-    <span class="material-icons-round" style="font-size:15px">delete_sweep</span>
-    Apagar conversa
-  </button>
-      <span class="online-dot"></span>
-      <span>Suporte online</span>
-    </div>
+  <span class="online-dot"></span>
+  <span>Suporte online</span>
+</div>
+<button id="clear-support-btn" onclick="clearSupportHistory()"
+  style="display:none;margin-top:14px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.5);
+  padding:7px 14px;border-radius:100px;font-size:12px;font-weight:600;
+  font-family:var(--font-body);cursor:pointer;
+  align-items:center;gap:6px;transition:all .2s;position:relative;z-index:1"
+  onmouseover="this.style.background='rgba(255,61,46,.2)'"
+  onmouseout="this.style.background='rgba(255,255,255,.07)'">
+  <span class="material-icons-round" style="font-size:15px">delete_sweep</span>
+  Apagar conversa
+</button>
   </div>
   <div id="support-msgs-area" class="support-msgs-area">
     <div class="support-empty">
@@ -1018,6 +1049,12 @@ const auth = firebase.auth();
 //  EMAIL ESPECIAL DE ADMINISTRADOR
 // ══════════════════════════════════════════════
 const ADMIN_EMAIL = 'deusimarfirme600@gmail.com';
+function hideSplash() {
+  const s = document.getElementById('splash-screen');
+  if (!s) return;
+  s.style.animation = 'splashFade .5s ease forwards';
+  setTimeout(() => s.remove(), 500);
+}
 const VERIFIED_EMAIL = ADMIN_EMAIL;
 
 function isAdminUser() {
@@ -1140,9 +1177,10 @@ auth.onAuthStateChanged(firebaseUser => {
 // ══════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════
+
 let storesData = {};
 let currentStoreId = null;
-let cart = {};
+let cart = JSON.parse(localStorage.getItem('dt_cart') || '{}');
 let deliveryType = 'delivery';
 let userProfile = JSON.parse(localStorage.getItem('dt_user') || 'null');
 let activeFilter = 'all';
@@ -1159,7 +1197,7 @@ let currentSupportConvId = null;
 db.ref('stores').on('value', snap => {
   storesData = snap.val() || {};
   renderHome();
-  checkLocalStoreStatus();
+  hideSplash();
   if (currentStoreId && storesData[currentStoreId]) renderMenu(currentStoreId);
   if (userProfile?.role === 'owner' && userProfile.storeId) listenIncomingOrders(userProfile.storeId);
   if (pageStack.includes('sa-admin-page')) renderSuperAdminStores();
@@ -1296,7 +1334,11 @@ function renderSupportMessages(msgs) {
       <span class="material-icons-round">chat_bubble_outline</span>
       <p>Envie sua primeira mensagem e nossa equipe responderá em breve.</p>
     </div>`;
+    const btn = document.getElementById('clear-support-btn');
+    if (btn) btn.style.display = 'none';
     return;
+    const supportBtn = document.getElementById('clear-support-btn');
+  if (supportBtn) supportBtn.style.display = 'inline-flex';
   }
   const myPhotoURL = userProfile?.photoURL || null;
   const myName = userProfile?.name || 'Você';
@@ -1528,6 +1570,30 @@ function setFilter(f, el) {
   renderHome();
 }
 
+function showSkeletonStores() {
+  const list = document.getElementById('store-list');
+  if (!list) return;
+  list.innerHTML = [1,2,3].map(() => `
+    <div style="background:var(--surface);border-radius:var(--r-md);overflow:hidden;
+      border:.5px solid var(--border)">
+      <div class="skeleton" style="height:140px;border-radius:0"></div>
+      <div style="padding:14px 16px">
+        <div style="display:flex;gap:12px;margin-bottom:12px">
+          <div class="skeleton" style="width:44px;height:44px;border-radius:10px;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div class="skeleton" style="height:16px;width:60%;margin-bottom:8px"></div>
+            <div class="skeleton" style="height:12px;width:40%"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div class="skeleton" style="height:22px;width:80px;border-radius:100px"></div>
+          <div class="skeleton" style="height:22px;width:60px;border-radius:100px"></div>
+          <div class="skeleton" style="height:22px;width:70px;border-radius:100px"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
 function renderHome() {
   const list = document.getElementById('store-list');
   const q = document.getElementById('main-search')?.value.toLowerCase().trim() || '';
@@ -1645,6 +1711,7 @@ function updateCartBadge() {
   const badge = document.getElementById('cart-count');
   badge.textContent = total;
   badge.style.display = total > 0 ? 'flex' : 'none';
+  localStorage.setItem('dt_cart', JSON.stringify(cart));
   if (pageStack.includes('cart-page')) renderCartPage();
 }
 
@@ -1752,7 +1819,12 @@ async function placeOrder() {
   const storeId = items[0].storeId; const total = items.reduce((a, i) => a + i.price * i.qty, 0);
   const order = { id: '', storeId, storeName: items[0].storeName, customerId: userProfile.id, customerName: userProfile.name, items: items.map(i => ({ name: i.name, price: i.price, qty: i.qty })), total, address, note, deliveryType, status: 'pending', createdAt: Date.now() };
   const ref = db.ref('orders').push(); order.id = ref.key; await ref.set(order);
-  cart = {}; updateCartBadge(); closeOrderForm(); toast('🎉 Pedido realizado com sucesso!'); tabTo('orders');
+  cart = {};
+  localStorage.removeItem('dt_cart');
+  updateCartBadge();
+  closeOrderForm();
+  toast('🎉 Pedido realizado com sucesso!');
+  tabTo('orders');
 }
 
 // ══════════════════════════════════════════════
@@ -1805,6 +1877,11 @@ function renderOrdersList(orders) {
       </div>` : ''}
     </div>`;
   }).join('');
+  const btn = document.getElementById('clear-orders-btn');
+  if (btn) {
+    const hasDelivered = arr.some(o => o.status === 'delivered');
+    btn.style.display = hasDelivered ? 'inline-flex' : 'none';
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -2021,7 +2098,9 @@ function changeNameModal() {
 function logout() {
   if (!confirm('Sair da conta?')) return;
   if (userProfile?.googleAuth) auth.signOut().catch(() => {});
-  localStorage.removeItem('dt_user'); localStorage.removeItem('my_store_id');
+  localStorage.removeItem('dt_user');
+  localStorage.removeItem('my_store_id');
+  localStorage.removeItem('dt_cart');
   userProfile = null; pageStack = [];
   document.querySelectorAll('.page').forEach(p => { p.classList.remove('active', 'push-in', 'pop-out', 'push-under', 'pop-restore'); p.style.display = 'none'; });
   document.getElementById('main-nav').style.display = 'none';
@@ -2050,6 +2129,7 @@ function toast(msg, type = 'success') {
 //  INIT
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+  showSkeletonStores();
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
   if (userProfile) {
     document.getElementById('onboarding').style.display = 'none';
@@ -2299,23 +2379,7 @@ function restoreFromBan() {
   toast('✅ Acesso restaurado!');
 }
 
-async function liftBan(ownerId) {
-  if (!confirm('Levantar o banimento deste usuário?')) return;
 
-  // Zera completamente no Firebase
-  await db.ref('suspensions/' + ownerId).set({
-    banned: false,
-    count: 0,
-    history: [],
-    ownerName: (await db.ref('suspensions/' + ownerId + '/ownerName').once('value')).val() || 'Usuário'
-  });
-
-  toast('Banimento levantado');
-  renderSuspensionsList();
-
-  // Se o usuário banido É o usuário atual, o listener do startBanWatcher
-  // vai detectar a mudança automaticamente e chamar restoreFromBan()
-}
 
 
 function showBannedScreen(data) {
@@ -2352,18 +2416,7 @@ function showBannedScreen(data) {
 
 function trapBannedKeyboard(e) { if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) e.preventDefault(); }
 
-async function liftBan(ownerId) {
-  if (!confirm('Levantar o banimento deste usuário?')) return;
-  const nameSnap = await db.ref('suspensions/' + ownerId + '/ownerName').once('value');
-  await db.ref('suspensions/' + ownerId).set({
-    banned: false,
-    count: 0,
-    history: [],
-    ownerName: nameSnap.val() || 'Usuário'
-  });
-  toast('Banimento levantado');
-  renderSuspensionsList();
-}
+
 
 async function liftBan(ownerId) {
   if (!confirm('Levantar o banimento deste usuário?')) return;
@@ -3044,17 +3097,6 @@ function clearOrdersHistory() {
   });
 }
 
-// Atualiza renderOrdersList para mostrar/ocultar o botão
-const _origRenderOrdersList = renderOrdersList;
-function renderOrdersList(orders) {
-  _origRenderOrdersList(orders);
-  const arr = Object.values(orders);
-  const btn = document.getElementById('clear-orders-btn');
-  if (btn) {
-    const hasDelivered = arr.some(o => o.status === 'delivered');
-    btn.style.display = hasDelivered ? 'inline-flex' : 'none';
-  }
-}
 
 // ══════════════════════════════════════════════
 //  APAGAR HISTÓRICO DE SUPORTE
@@ -3077,16 +3119,6 @@ function clearSupportHistory() {
   });
 }
 
-// Mostra botão quando há mensagens no suporte
-const _origRenderSupportMessages = renderSupportMessages;
-function renderSupportMessages(msgs) {
-  _origRenderSupportMessages(msgs);
-  const btn = document.getElementById('clear-support-btn');
-  if (btn) {
-    const hasMessages = Object.keys(msgs || {}).length > 0;
-    btn.style.display = hasMessages ? 'inline-flex' : 'none';
-  }
-}
 </script>
 
 
@@ -3241,8 +3273,8 @@ function renderSupportMessages(msgs) {
 </section>
 
   <!-- CONFIRM MODAL -->
-<div id="confirm-modal" style="display:none;position:fixed;inset:0;z-index:9990;
-  display:none;flex-direction:column;justify-content:flex-end">
+  <div id="confirm-modal" style="display:none;position:fixed;inset:0;z-index:9990;
+  flex-direction:column;justify-content:flex-end">
   <div id="confirm-modal-bg" onclick="closeConfirmModal()"
     style="position:absolute;inset:0;background:rgba(0,0,0,.5);
     backdrop-filter:blur(4px)"></div>
