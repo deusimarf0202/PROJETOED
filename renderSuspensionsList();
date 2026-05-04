@@ -28,6 +28,12 @@
 html{scroll-behavior:smooth}
 body{background:var(--bg);font-family:var(--font-body);color:var(--dark);overflow-x:hidden}
 
+.img-preview-wrap{margin-top:8px;border-radius:var(--r-sm);overflow:hidden;
+  border:1px solid var(--border);background:var(--bg);
+  display:none;aspect-ratio:16/9;max-height:180px}
+.img-preview-wrap img{width:100%;height:100%;object-fit:cover}
+.img-preview-wrap.visible{display:block}
+
 /* ══ STACK NAVIGATION SYSTEM ══ */
 .page{
   position:fixed;inset:0;
@@ -737,6 +743,9 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       </div>
       <div class="field-group"><label class="field-label">Nome da loja <span style="color:var(--accent)">*</span></label><input class="field-input" type="text" id="adm-store-name" placeholder="Ex: Burguer da Vila"></div>
       <div class="field-group"><label class="field-label">URL da Logo <span style="color:var(--muted);font-weight:400">(opcional)</span></label><input class="field-input" type="url" id="adm-store-logo" placeholder="https://…"></div>
+      <div class="img-preview-wrap" id="preview-logo">
+      <img id="preview-logo-img" src="" alt="Preview">
+    </div>
       <div class="field-group"><label class="field-label">Endereço <span style="color:var(--accent)">*</span></label><input class="field-input" type="text" id="adm-store-address" placeholder="Rua, número, cidade"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="field-group"><label class="field-label">País <span style="color:var(--accent)">*</span></label><input class="field-input" type="text" id="adm-country" placeholder="Brasil"></div>
@@ -758,7 +767,7 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
             <option value="Frutos do Mar">🦞 Frutos do Mar</option>
             <option value="Vegetariana">🥗 Vegetariana</option>
             <option value="Sobremesas">🍰 Sobremesas</option>
-            <option value="Bebidas">🥤 Bebidas</option>
+
             <option value="Padaria">🥐 Padaria</option>
             <option value="Outros">🍽️ Outros</option>
           </select>
@@ -782,6 +791,9 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="field-group"><label class="field-label">Preço (R$)</label><input class="field-input" type="number" id="p-price" placeholder="29.90" step="0.01" min="0"></div>
         <div class="field-group"><label class="field-label">Foto URL</label><input class="field-input" type="url" id="p-img" placeholder="https://…"></div>
+        <div class="img-preview-wrap" id="preview-pimg">
+      <img id="preview-pimg-img" src="" alt="Preview">
+    </div>
       </div>
       <div class="field-group"><label class="field-label">Descrição breve</label><input class="field-input" type="text" id="p-desc" placeholder="Ingredientes principais…"></div>
       <button class="btn-primary" onclick="addProduct()">
@@ -1337,8 +1349,6 @@ function renderSupportMessages(msgs) {
     const btn = document.getElementById('clear-support-btn');
     if (btn) btn.style.display = 'none';
     return;
-    const supportBtn = document.getElementById('clear-support-btn');
-  if (supportBtn) supportBtn.style.display = 'inline-flex';
   }
   const myPhotoURL = userProfile?.photoURL || null;
   const myName = userProfile?.name || 'Você';
@@ -1383,6 +1393,10 @@ function renderSupportMessages(msgs) {
     if (m.id) db.ref('support/' + convId + '/messages/' + m.id).update({ readByUser: true });
   });
   document.getElementById('support-notif').style.display = 'none';
+  setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
+  const clearBtn = document.getElementById('clear-support-btn');
+  if (clearBtn) clearBtn.style.display = 'inline-flex';
+
   setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
 }
 
@@ -2551,6 +2565,14 @@ function openSAStores() {
     <div id="sa-store-list"></div>
     <div class="sa-section-label" style="margin-top:8px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05)">Suspensões &amp; Banimentos</div>
     <div id="sa-suspensions-list" style="padding:0 24px"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0;text-align:center">Carregando…</p></div>
+    <div style="padding:12px 24px 16px">
+  <button onclick="clearAllReviews()" style="width:100%;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:#F59E0B;padding:11px;border-radius:10px;font-size:13px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:10px">
+    <span class="material-icons-round" style="font-size:15px">star_border</span> Apagar todas as avaliações
+  </button>
+  <button onclick="clearAllOrders()" style="width:100%;background:rgba(255,61,46,.06);border:1px solid rgba(255,61,46,.18);color:var(--accent);padding:11px;border-radius:10px;font-size:13px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+    <span class="material-icons-round" style="font-size:15px">receipt_long</span> Apagar todos os pedidos
+  </button>
+</div>
   `;
   renderSuperAdminStores(); renderSuspensionsList();
 }
@@ -2570,6 +2592,11 @@ function openSASupport() {
       <span id="sa-pending-count" style="font-size:11px;color:rgba(255,255,255,.3)"></span>
     </div>
     <div class="sa-conversations" id="sa-conv-list"><p style="font-size:13px;color:rgba(255,255,255,.3);text-align:center;padding:24px">Carregando conversas…</p></div>
+    <div style="padding:8px 16px 12px;border-top:1px solid rgba(255,255,255,.06)">
+      <button onclick="clearAllSupportConvs()" style="width:100%;background:rgba(255,61,46,.06);border:1px solid rgba(255,61,46,.2);color:#FF6B6B;padding:10px;border-radius:10px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <span class="material-icons-round" style="font-size:14px">delete_sweep</span> Apagar todas as conversas
+      </button>
+    </div>
   </div>`;
   loadSAConversations();
 }
@@ -2875,7 +2902,13 @@ function openSAReports() {
   if (saTitle) saTitle.textContent = 'Denúncias';
   if (saBackBtn) saBackBtn.style.display = 'flex';
   const body = document.getElementById('sa-body-content');
-  body.innerHTML = `<div id="sa-reports-list" style="padding-bottom:24px"><p style="font-size:13px;color:rgba(255,255,255,.3);text-align:center;padding:32px">Carregando denúncias…</p></div>`;
+  body.innerHTML = `
+    <div style="padding:12px 24px 4px;border-bottom:1px solid rgba(255,255,255,.06)">
+      <button onclick="clearAllReports()" style="width:100%;background:rgba(255,61,46,.06);border:1px solid rgba(255,61,46,.18);color:var(--accent);padding:11px;border-radius:10px;font-size:13px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px">
+        <span class="material-icons-round" style="font-size:15px">delete_sweep</span> Apagar todas as denúncias
+      </button>
+    </div>
+    <div id="sa-reports-list" style="padding-bottom:24px"><p style="font-size:13px;color:rgba(255,255,255,.3);text-align:center;padding:32px">Carregando denúncias…</p></div>`;
   loadSAReports();
 }
 
@@ -3119,6 +3152,71 @@ function clearSupportHistory() {
   });
 }
 
+// ══ LIMPAR HISTÓRICOS (SUPER ADMIN) ══
+
+async function clearAllReviews() {
+  const count = Object.values(storesData)
+    .reduce((a, s) => a + Object.keys(s.reviews || {}).length, 0);
+  if (!count) { toast('Nenhuma avaliação para remover'); return; }
+  if (!confirm(`Apagar todas as ${count} avaliações? Ação irreversível.`)) return;
+  const updates = {};
+  Object.values(storesData).forEach(s => {
+    if (s.reviews && Object.keys(s.reviews).length)
+      updates['stores/' + s.id + '/reviews'] = null;
+  });
+  await db.ref().update(updates);
+  toast(`🗑️ ${count} avaliações removidas`);
+  renderSuperAdminStores();
+}
+
+async function clearAllOrders() {
+  const snap = await db.ref('orders').once('value');
+  const orders = snap.val() || {};
+  const count = Object.keys(orders).length;
+  if (!count) { toast('Nenhum pedido para remover'); return; }
+  if (!confirm(`Apagar TODOS os ${count} pedidos da plataforma? Isso afeta todos os usuários.`)) return;
+  await db.ref('orders').remove();
+  toast(`🗑️ ${count} pedidos removidos`);
+}
+
+async function clearAllReports() {
+  const snap = await db.ref('reports').once('value');
+  const count = Object.keys(snap.val() || {}).length;
+  if (!count) { toast('Nenhuma denúncia para remover'); return; }
+  if (!confirm(`Apagar todas as ${count} denúncias? Ação irreversível.`)) return;
+  await db.ref('reports').remove();
+  toast(`🗑️ ${count} denúncias removidas`);
+  loadSAReports();
+}
+
+async function clearAllSupportConvs() {
+  const snap = await db.ref('support').once('value');
+  const count = Object.keys(snap.val() || {}).length;
+  if (!count) { toast('Nenhuma conversa para remover'); return; }
+  if (!confirm(`Apagar TODAS as ${count} conversas de suporte? Isso afeta todos os usuários.`)) return;
+  await db.ref('support').remove();
+  toast(`🗑️ ${count} conversas apagadas`);
+  openSASupport();
+}
+
+// ══ PREVIEW DE IMAGENS ══
+document.addEventListener('DOMContentLoaded', () => {
+  function bindImgPreview(inputId, wrapId, imgId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.addEventListener('input', () => {
+      const url = input.value.trim();
+      const wrap = document.getElementById(wrapId);
+      const img  = document.getElementById(imgId);
+      if (!url) { wrap.classList.remove('visible'); return; }
+      img.src = url;
+      img.onload  = () => wrap.classList.add('visible');
+      img.onerror = () => wrap.classList.remove('visible');
+    });
+  }
+  bindImgPreview('adm-store-logo', 'preview-logo',  'preview-logo-img');
+  bindImgPreview('p-img',          'preview-pimg',  'preview-pimg-img');
+});
 </script>
 
 
