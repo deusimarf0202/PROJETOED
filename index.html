@@ -13,7 +13,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 
-
 <style>
 :root {
   --accent:#FF3D2E;--accent-dark:#C42B1F;--accent-light:#FFF0EE;
@@ -515,25 +514,6 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 .sa-delete-conv-btn .material-icons-round{font-size:15px}
 /* ✅ NOVO: pendente badge */
 .sa-pending-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.4);border-radius:100px;padding:2px 8px;font-size:10px;font-weight:700;color:#60A5FA}
-
-/* ══ DENÚNCIAS ══ */
-.report-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,61,46,.08);border:1px solid rgba(255,61,46,.22);color:var(--accent);padding:9px 16px;border-radius:100px;font-size:13px;font-weight:600;font-family:var(--font-body);cursor:pointer;transition:all .2s;margin:12px 20px 0}
-.report-btn:hover{background:rgba(255,61,46,.15)}
-.report-btn .material-icons-round{font-size:16px}
-.report-category-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
-.report-cat-card{border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px 10px;cursor:pointer;text-align:center;transition:all .2s;background:var(--bg)}
-.report-cat-card.active{border-color:var(--accent);background:var(--accent-light)}
-.report-cat-card .material-icons-round{font-size:22px;color:var(--muted);display:block;margin-bottom:5px}
-.report-cat-card.active .material-icons-round{color:var(--accent)}
-.report-cat-card strong{font-size:12px;font-weight:700;font-family:var(--font-display);display:block;line-height:1.3}
-.report-cat-card.active strong{color:var(--accent)}
-/* SA Reports */
-.sa-report-row{padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s}
-.sa-report-row:hover{background:rgba(255,255,255,.03)}
-.sa-report-badge{display:inline-flex;align-items:center;gap:4px;border-radius:100px;padding:3px 10px;font-size:11px;font-weight:700;font-family:var(--font-display)}
-.sa-report-badge.open{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
-.sa-report-badge.resolved{background:rgba(26,158,94,.12);color:#1A9E5E;border:1px solid rgba(26,158,94,.25)}
-.sa-report-badge.dismissed{background:rgba(255,255,255,.06);color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.1)}
 </style>
 </head>
 <body>
@@ -548,23 +528,23 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       <h3>🍔 Quero pedir comida</h3>
       <p>Explore restaurantes e lojas perto de você</p>
     </div>
-   <button class="ob-btn-google" id="btn-google-login" onclick="loginWithProvider('google')">
-  <!-- SVG Google aqui --> Continuar com Google
-</button>
-
-<button class="ob-btn-google" id="btn-apple-login" onclick="loginWithProvider('apple')" style="background:#000;color:white;margin-top:10px">
-  <span class="material-icons-round">apple</span> Continuar com Apple
-</button>
-
-<button class="ob-btn-google" id="btn-facebook-login" onclick="loginWithProvider('facebook')" style="background:#1877F2;color:white;margin-top:10px">
-  <span class="material-icons-round">facebook</span> Continuar com Facebook
-</button>
-
-<div class="ob-separator" style="margin-top:16px">— ou —</div>
-
-<button class="ob-btn ob-btn-ghost" onclick="openLoginExisting()" style="margin-top:12px">
-  <span class="material-icons-round">login</span> Já possuo uma conta
-</button>
+    <button class="ob-btn-google" id="btn-google-login" onclick="loginWithGoogle('customer')" style="margin-bottom:12px">
+      <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        <path fill="none" d="M0 0h48v48H0z"/>
+      </svg>
+      Continuar com Google
+    </button>
+    <div class="ob-separator">— ou entre sem Google —</div>
+    <button class="ob-btn ob-btn-primary" onclick="startOnboarding('customer')" style="margin-top:12px;margin-bottom:8px">
+      <span class="material-icons-round">person</span> Sou cliente (nome)
+    </button>
+    <button class="ob-btn ob-btn-ghost" onclick="startOnboarding('owner')" style="margin-top:4px">
+      <span class="material-icons-round">storefront</span> Tenho um restaurante
+    </button>
   </div>
 </section>
 
@@ -930,54 +910,6 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
   </p>
 </div>
 
-<!-- REPORT MODAL -->
-<div class="cart-overlay" id="report-overlay">
-  <div class="cart-bg" onclick="closeReportModal()"></div>
-  <div class="cart-sheet" style="padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))">
-    <div class="cart-handle"></div>
-    <div class="cart-header">
-      <h3>Denunciar Restaurante</h3>
-      <span id="report-store-label" style="color:var(--muted);font-size:13px"></span>
-    </div>
-    <div style="padding:20px 24px 0">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Selecione o motivo da denúncia:</p>
-      <div class="report-category-grid" id="report-cat-grid">
-        <div class="report-cat-card" onclick="selectReportCat('Produto impróprio',this)">
-          <span class="material-icons-round">no_food</span>
-          <strong>Produto impróprio</strong>
-        </div>
-        <div class="report-cat-card" onclick="selectReportCat('Fraude / golpe',this)">
-          <span class="material-icons-round">gpp_bad</span>
-          <strong>Fraude / golpe</strong>
-        </div>
-        <div class="report-cat-card" onclick="selectReportCat('Atendimento abusivo',this)">
-          <span class="material-icons-round">sentiment_very_dissatisfied</span>
-          <strong>Atendimento abusivo</strong>
-        </div>
-        <div class="report-cat-card" onclick="selectReportCat('Informações falsas',this)">
-          <span class="material-icons-round">fact_check</span>
-          <strong>Informações falsas</strong>
-        </div>
-        <div class="report-cat-card" onclick="selectReportCat('Preço abusivo',this)">
-          <span class="material-icons-round">price_change</span>
-          <strong>Preço abusivo</strong>
-        </div>
-        <div class="report-cat-card" onclick="selectReportCat('Outro',this)">
-          <span class="material-icons-round">more_horiz</span>
-          <strong>Outro</strong>
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Descrição (opcional)</label>
-        <textarea class="field-input" id="report-desc" placeholder="Descreva o ocorrido com detalhes…" rows="3" style="resize:none;line-height:1.5"></textarea>
-      </div>
-      <button class="checkout-btn" style="margin-top:8px;background:#F59E0B" onclick="submitReport()">
-        <span class="material-icons-round">flag</span> Enviar Denúncia
-      </button>
-    </div>
-  </div>
-</div>
-  
 <!-- TOAST -->
 <div class="toast" id="toast">
   <span class="material-icons-round">check_circle</span>
@@ -1047,49 +979,6 @@ function loginWithGoogle(role) {
     });
 }
 
-// ✅ SUBSTITUA POR:
-function openLoginExisting() {
-  const stored = JSON.parse(localStorage.getItem('dt_user') || 'null');
-
-  // Se já tem sessão salva com Google, restaura direto
-  if (stored && stored.googleAuth && stored.id) {
-    db.ref('suspensions/' + stored.id).once('value').then(snap => {
-      const data = snap.val();
-      if (data && data.banned) { showBannedScreen(data); return; }
-      userProfile = stored;
-      applyProfile();
-      toast('Bem-vindo de volta, ' + stored.name + '!');
-    }).catch(() => {
-      userProfile = stored;
-      applyProfile();
-    });
-    return;
-  }
-
-  // Fluxo para contas locais (sem Google)
-  const nome = prompt('Nome de usuário:');
-  if (!nome || !nome.trim()) { toast('Informe seu nome de usuário', 'error'); return; }
-  const senha = prompt('Senha:');
-  if (!senha) { toast('Informe sua senha', 'error'); return; }
-
-  if (stored && stored.name === nome.trim() && stored.localPass === senha) {
-    db.ref('suspensions/' + stored.id).once('value').then(snap => {
-      const data = snap.val();
-      if (data && data.banned) { showBannedScreen(data); return; }
-      userProfile = stored;
-      applyProfile();
-    }).catch(() => {
-      userProfile = stored;
-      applyProfile();
-    });
-  } else {
-    toast('Usuário ou senha incorretos', 'error');
-  }
-}
-
-
-
-
 function handleGoogleResult(result, role) {
   const user = result.user;
   return db.ref('suspensions/' + user.uid).once('value').then(snap => {
@@ -1107,56 +996,19 @@ function handleGoogleResult(result, role) {
       finalRole = existingRole || role || 'customer';
     }
 
-const pendingPass = sessionStorage.getItem('dt_pending_pass') || null;
-sessionStorage.removeItem('dt_pending_pass');
-sessionStorage.removeItem('dt_pending_name');
-userProfile = {
-  localPass: pendingPass,
-  name: user.displayName || user.email.split('@')[0],
-  role: finalRole,
-  storeId: email === ADMIN_EMAIL.toLowerCase() ? null : (existingStoreId || null),
-  id: user.uid,
-  email: user.email,
-  photoURL: user.photoURL || null,
-  googleAuth: true
-};
-localStorage.setItem('dt_user', JSON.stringify(userProfile));
-resetGoogleBtn();
-applyProfile();
+    userProfile = {
+      name: user.displayName || user.email.split('@')[0],
+      role: finalRole,
+      storeId: email === ADMIN_EMAIL.toLowerCase() ? null : (existingStoreId || null),
+      id: user.uid,
+      email: user.email,
+      photoURL: user.photoURL || null,
+      googleAuth: true
+    };
+    localStorage.setItem('dt_user', JSON.stringify(userProfile));
+    resetGoogleBtn();
+    applyProfile();
   });
-}
-
-async function loginWithProvider(provider) {
-  const name = prompt('Qual é o seu nome?', '');
-  if (!name || !name.trim()) { toast('Informe seu nome', 'error'); return; }
-
-  const senha = prompt('Crie uma senha:');
-  if (!senha || senha.length < 6) { toast('Senha deve ter ao menos 6 caracteres', 'error'); return; }
-
-  const confirma = prompt('Confirme sua senha:');
-  if (senha !== confirma) { toast('As senhas não coincidem', 'error'); return; }
-
-  const tipo = confirm('Você possui um estabelecimento?\nOK = Sim\nCancelar = Sou cliente');
-  const role = tipo ? 'owner' : 'customer';
-
-  sessionStorage.setItem('dt_pending_name', name.trim());
-  sessionStorage.setItem('dt_pending_role', role);
-  sessionStorage.setItem('dt_pending_pass', senha);
-
-  if (provider === 'google') {
-    loginWithGoogle(role);
-    return;
-  }
-
-  if (provider === 'apple') {
-    const appleProvider = new firebase.auth.OAuthProvider('apple.com');
-    auth.signInWithPopup(appleProvider).then(result => handleGoogleResult(result, role));
-  }
-
-  if (provider === 'facebook') {
-    const fbProvider = new firebase.auth.FacebookAuthProvider();
-    auth.signInWithPopup(fbProvider).then(result => handleGoogleResult(result, role));
-  }
 }
 
 function resetGoogleBtn() {
@@ -1172,7 +1024,37 @@ function resetGoogleBtn() {
   </svg> Continuar com Google`;
 }
 
+auth.getRedirectResult()
+  .then(result => {
+    if (result && result.user) {
+      const pendingRole = sessionStorage.getItem('dt_pending_role') || 'customer';
+      sessionStorage.removeItem('dt_pending_role');
+      return handleGoogleResult(result, pendingRole);
+    }
+  })
+  .catch(err => {
+    if (err.code && err.code !== 'auth/no-auth-event') console.error('Redirect result error:', err.code, err.message);
+  });
 
+auth.onAuthStateChanged(firebaseUser => {
+  if (firebaseUser && !userProfile) {
+    db.ref('suspensions/' + firebaseUser.uid).once('value').then(snap => {
+      const data = snap.val();
+      if (data && data.banned) { auth.signOut(); showBannedScreen(data); return; }
+      const stored = JSON.parse(localStorage.getItem('dt_user') || 'null');
+      if (stored && stored.id === firebaseUser.uid) {
+        userProfile = stored;
+        if (firebaseUser.photoURL) userProfile.photoURL = firebaseUser.photoURL;
+        if (firebaseUser.email && firebaseUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+          userProfile.role = 'admin';
+        }
+        localStorage.setItem('dt_user', JSON.stringify(userProfile));
+        document.getElementById('onboarding').style.display = 'none';
+        applyProfile();
+      }
+    }).catch(() => {});
+  }
+});
 
 // ══════════════════════════════════════════════
 //  STATE
@@ -1292,20 +1174,12 @@ function changeProfilePhoto() {
 
 function setupOrdersListener() {
   if (!userProfile) return;
-
-db.ref('orders').orderByChild('customerId').equalTo(userProfile?.id || '').on('value', snap => {
-  const orders = snap.val() || {};
-  const hasActive = Object.values(orders).some(o => o.status && o.status !== 'delivered');
-
-  const notifEl = document.getElementById('orders-notif');
-  if (notifEl) notifEl.style.display = hasActive ? 'block' : 'none';
-
-  const ordersPage = document.getElementById('orders');
-  const listEl = document.getElementById('orders-list');
-  if (ordersPage && listEl && ordersPage.classList.contains('active')) {
-    renderOrdersList(orders);
-  }
-});
+  db.ref('orders').orderByChild('customerId').equalTo(userProfile.id).on('value', snap => {
+    const orders = snap.val() || {};
+    const hasActive = Object.values(orders).some(o => o.status && o.status !== 'delivered');
+    document.getElementById('orders-notif').style.display = hasActive ? 'block' : 'none';
+    if (document.getElementById('orders').classList.contains('active')) renderOrdersList(orders);
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -1619,7 +1493,6 @@ function openMenu(storeId) {
   currentStoreId = storeId;
   renderMenu(storeId);
   renderReviews(storeId);
-  injectReportBtn(storeId, storesData[storeId]?.name || '');
   pushPage('menu-view');
 }
 
@@ -2020,28 +1893,15 @@ function checkLocalStoreStatus() {
     const prods = store.products || {};
     const container = document.getElementById('my-products-list');
     if (!Object.keys(prods).length) { container.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0">Nenhum prato cadastrado ainda</p>'; return; }
-      container.innerHTML = Object.entries(prods).map(([key, p]) => `<div class="product-row">
-  <img src="${p.img || ''}" class="product-row-img" onerror="this.src=''" alt="">
-  <div class="product-row-info">
-    <strong>${esc(p.name)}</strong>
-    <span>R$ ${parseFloat(p.price).toFixed(2)}</span>
-  </div>
-  <button class="product-row-del" onclick="deleteMyProduct('${myId}','${key}')">
-    <span class="material-icons-round">delete</span>
-  </button>
-</div>`).join('');
+    container.innerHTML = Object.entries(prods).map(([key, p]) => `<div class="product-row">
+      <img src="${p.img || ''}" class="product-row-img" onerror="this.src=''" alt="">
+      <div class="product-row-info"><strong>${esc(p.name)}</strong><span>R$ ${parseFloat(p.price).toFixed(2)}</span></div>
+      <button class="product-row-del" onclick="db.ref('stores/${myId}/products/${key}').remove()"><span class="material-icons-round">delete</span></button>
+    </div>`).join('');
   } else {
     document.getElementById('form-loja').style.display = 'block';
     document.getElementById('form-produtos').style.display = 'none';
   }
-}
-
-
-function deleteMyProduct(storeId, productKey) {
-  if (!storeId || !productKey) return;
-  db.ref('stores/' + storeId + '/products/' + productKey).remove()
-    .then(() => toast('Prato removido!'))
-    .catch(() => toast('Erro ao remover prato', 'error'));
 }
 
 function deleteMyStore() {
@@ -2099,67 +1959,15 @@ function toast(msg, type = 'success') {
 //  INIT
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.page').forEach(p => {
-    p.style.display = 'none';
-    p.classList.remove('active');
-  });
-
-  // ✅ Listeners do Firebase agora ficam aqui, após tudo estar carregado
-  auth.getRedirectResult()
-    .then(result => {
-      if (result && result.user) {
-        const pendingRole = sessionStorage.getItem('dt_pending_role') || 'customer';
-        sessionStorage.removeItem('dt_pending_role');
-        return handleGoogleResult(result, pendingRole);
-      }
-    })
-    .catch(err => {
-      if (err.code && err.code !== 'auth/no-auth-event')
-        console.error('Redirect result error:', err.code, err.message);
-    });
-
-  auth.onAuthStateChanged(firebaseUser => {
-    if (firebaseUser && !userProfile) {
-      db.ref('suspensions/' + firebaseUser.uid).once('value').then(snap => {
-        const data = snap.val();
-        if (data && data.banned) { auth.signOut(); showBannedScreen(data); return; }
-        const stored = JSON.parse(localStorage.getItem('dt_user') || 'null');
-        if (stored && stored.id === firebaseUser.uid) {
-          userProfile = stored;
-          if (firebaseUser.photoURL) userProfile.photoURL = firebaseUser.photoURL;
-          if (firebaseUser.email && firebaseUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-            userProfile.role = 'admin';
-          }
-          localStorage.setItem('dt_user', JSON.stringify(userProfile));
-          document.getElementById('onboarding').style.display = 'none';
-          applyProfile();
-        }
-      }).catch(() => {});
-    }
-  });
-
-  db.ref('stores').on('value', snap => {
-    storesData = snap.val() || {};
-    renderHome();
-    checkLocalStoreStatus();
-    if (currentStoreId && storesData[currentStoreId]) renderMenu(currentStoreId);
-    if (userProfile?.role === 'owner' && userProfile.storeId) listenIncomingOrders(userProfile.storeId);
-    if (pageStack.includes('sa-admin-page')) renderSuperAdminStores();
-  });
-
+  document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
   if (userProfile) {
     document.getElementById('onboarding').style.display = 'none';
     db.ref('suspensions/' + userProfile.id).once('value').then(snap => {
       const data = snap.val();
       if (data && data.banned) { showBannedScreen(data); startBanWatcher(); }
-      else {
-        applyProfile();
-        const myId = localStorage.getItem('my_store_id');
-        if (myId) listenIncomingOrders(myId);
-      }
+      else { applyProfile(); const myId = localStorage.getItem('my_store_id'); if (myId) listenIncomingOrders(myId); }
     }).catch(() => { applyProfile(); });
   }
-
   initSuperAdminTrigger();
 });
 
@@ -2492,16 +2300,6 @@ function renderSAPanel() {
         </div>
         <span class="material-icons-round" style="color:rgba(255,255,255,.25);font-size:20px">chevron_right</span>
       </div>
-        <div class="sa-menu-card" onclick="openSAReports()">
-  <div class="sa-menu-icon" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.25)">
-    <span class="material-icons-round" style="color:#F59E0B;font-size:26px">flag</span>
-  </div>
-  <div class="sa-menu-card-text">
-    <strong>Denúncias</strong>
-    <span>Veja e gerencie denúncias feitas por clientes contra restaurantes.</span>
-  </div>
-  <span class="material-icons-round" style="color:rgba(255,255,255,.25);font-size:20px">chevron_right</span>
-</div>
     </div>`;
   }
 }
@@ -2590,16 +2388,8 @@ function loadSAConversations() {
   db.ref('support').on('value', saConvListener);
 }
 
-
 function openSAChat(convId, userName, userPhotoURL, userId) {
-  // Limpa listener anterior independente de saActiveChatConvId
-  if (saChatMsgListener) {
-    if (saActiveChatConvId) {
-      db.ref('support/' + saActiveChatConvId + '/messages')
-        .off('value', saChatMsgListener);
-    }
-    saChatMsgListener = null;
-  }
+  if (saChatMsgListener && saActiveChatConvId) { db.ref('support/' + saActiveChatConvId + '/messages').off('value', saChatMsgListener); saChatMsgListener = null; }
   saActiveChatConvId = convId;
   saActiveChatUserId = userId;
   saActiveChatUserName = userName;
@@ -2736,31 +2526,19 @@ function renderSuperAdminStores() {
   const stores = Object.values(storesData);
   const totalProds = stores.reduce((a, s) => a + Object.keys(s.products || {}).length, 0);
   const totalRevs = stores.reduce((a, s) => a + Object.keys(s.reviews || {}).length, 0);
-
   const statsEl = document.getElementById('sa-stats');
-  if (statsEl && saCurrentPanel === 'stores') {
-    statsEl.innerHTML = `
-      <div class="sa-stat"><div class="sa-stat-num">${stores.length}</div><div class="sa-stat-label">Lojas</div></div>
-      <div class="sa-stat"><div class="sa-stat-num">${totalProds}</div><div class="sa-stat-label">Pratos</div></div>
-      <div class="sa-stat"><div class="sa-stat-num">${totalRevs}</div><div class="sa-stat-label">Reviews</div></div>
-    `;
-  }
-
-  const list = document.getElementById('sa-store-list');
-  if (!list) return;
-
-  if (!stores.length) {
-    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4)"><span class="material-icons-round" style="font-size:40px;display:block;margin-bottom:8px;opacity:.4">store_mall_directory</span>Nenhum restaurante cadastrado</div>`;
-    return;
-  }
-
+  if (statsEl) statsEl.innerHTML = `
+    <div class="sa-stat"><div class="sa-stat-num">${stores.length}</div><div class="sa-stat-label">Lojas</div></div>
+    <div class="sa-stat"><div class="sa-stat-num">${totalProds}</div><div class="sa-stat-label">Pratos</div></div>
+    <div class="sa-stat"><div class="sa-stat-num">${totalRevs}</div><div class="sa-stat-label">Reviews</div></div>
+  `;
+  const list = document.getElementById('sa-store-list'); if (!list) return;
+  if (!stores.length) { list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.4)"><span class="material-icons-round" style="font-size:40px;display:block;margin-bottom:8px;opacity:.4">store_mall_directory</span>Nenhum restaurante cadastrado</div>`; return; }
   list.innerHTML = stores.map(s => {
-    const prodCount = Object.keys(s.products || {}).length;
-    const revCount = Object.keys(s.reviews || {}).length;
+    const prodCount = Object.keys(s.products || {}).length, revCount = Object.keys(s.reviews || {}).length;
     const { avg } = getStoreRating(s.id);
     const typeLabel = s.type === 'restaurant' ? 'Restaurante' : 'Delivery';
-    const saLocParts = [s.city, s.state, s.country].filter(Boolean);
-    const saLoc = saLocParts.join(', ');
+    const saLocParts = [s.city, s.state, s.country].filter(Boolean); const saLoc = saLocParts.join(', ');
     return `<div class="sa-store-row" id="sa-row-${s.id}">
       <img src="${s.logo || ''}" class="sa-store-logo" onerror="this.src=''" alt="">
       <div class="sa-store-info">
@@ -2769,9 +2547,7 @@ function renderSuperAdminStores() {
         ${saLoc ? `<span style="font-size:10px;opacity:.5">📍 ${esc(saLoc)}${s.address ? ' — ' + esc(s.address) : ''}</span>` : s.address ? `<span style="font-size:10px;opacity:.5">📍 ${esc(s.address)}</span>` : ''}
         ${s.phone ? `<span style="font-size:10px;opacity:.5">📞 ${esc(s.phone)}</span>` : ''}
       </div>
-      <button class="sa-del-btn" onclick="superAdminDeleteStore('${s.id}','${esc(s.name)}')">
-        <span class="material-icons-round">delete_forever</span>
-      </button>
+      <button class="sa-del-btn" onclick="superAdminDeleteStore('${s.id}','${esc(s.name)}')"><span class="material-icons-round">delete_forever</span></button>
     </div>`;
   }).join('');
 }
@@ -2792,125 +2568,6 @@ async function superAdminDeleteStore(id, name) {
 }
 
 function saPasswordKeydown(e) { if (e.key === 'Enter') checkSuperAdminPassword(); if (e.key === 'Escape') closeSuperAdminLogin(); }
-// ══════════════════════════════════════════════
-//  DENÚNCIAS
-// ══════════════════════════════════════════════
-let reportStoreId = null, reportStoreName = '', selectedReportCat = '';
-
-function openReportModal(storeId, storeName) {
-  if (!userProfile) { toast('Faça login para denunciar', 'error'); return; }
-  reportStoreId = storeId; reportStoreName = storeName; selectedReportCat = '';
-  document.getElementById('report-store-label').textContent = storeName;
-  document.getElementById('report-desc').value = '';
-  document.querySelectorAll('.report-cat-card').forEach(c => c.classList.remove('active'));
-  document.getElementById('report-overlay').classList.add('open');
-}
-function closeReportModal() { document.getElementById('report-overlay').classList.remove('open'); }
-
-function selectReportCat(cat, el) {
-  selectedReportCat = cat;
-  document.querySelectorAll('.report-cat-card').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-}
-
-async function submitReport() {
-  if (!selectedReportCat) { toast('Selecione um motivo', 'error'); return; }
-  const desc = document.getElementById('report-desc').value.trim();
-  const ref = db.ref('reports').push();
-  await ref.set({
-    id: ref.key,
-    storeId: reportStoreId,
-    storeName: reportStoreName,
-    reporterId: userProfile.id,
-    reporterName: userProfile.name,
-    category: selectedReportCat,
-    desc: desc || '',
-    status: 'open',
-    createdAt: Date.now()
-  });
-  closeReportModal();
-  toast('Denúncia enviada. Obrigado!');
-}
-
-// ── Botão de denúncia no menu do restaurante ──
-// Chame injectReportBtn() logo após renderMenu()
-function injectReportBtn(storeId, storeName) {
-  const existing = document.getElementById('report-store-btn');
-  if (existing) existing.remove();
-  const btn = document.createElement('button');
-  btn.id = 'report-store-btn';
-  btn.className = 'report-btn';
-  btn.innerHTML = '<span class="material-icons-round">flag</span> Denunciar restaurante';
-  btn.onclick = () => openReportModal(storeId, storeName);
-  const reviewsSection = document.getElementById('reviews-section');
-  if (reviewsSection) reviewsSection.insertAdjacentElement('beforebegin', btn);
-}
-
-// ── Aba Denúncias no Super Admin ──
-function openSAReports() {
-  saCurrentPanel = 'reports';
-  const saTitle = document.getElementById('sa-panel-title');
-  const saBackBtn = document.getElementById('sa-back-btn');
-  if (saTitle) saTitle.textContent = 'Denúncias';
-  if (saBackBtn) saBackBtn.style.display = 'flex';
-  const body = document.getElementById('sa-body-content');
-  body.innerHTML = `<div id="sa-reports-list" style="padding-bottom:24px"><p style="font-size:13px;color:rgba(255,255,255,.3);text-align:center;padding:32px">Carregando denúncias…</p></div>`;
-  loadSAReports();
-}
-
-async function loadSAReports() {
-  const snap = await db.ref('reports').once('value');
-  const data = snap.val() || {};
-  const el = document.getElementById('sa-reports-list');
-  if (!el) return;
-  const reports = Object.values(data).sort((a, b) => b.createdAt - a.createdAt);
-  if (!reports.length) {
-    el.innerHTML = `<div style="text-align:center;padding:48px 20px;color:rgba(255,255,255,.3)"><span class="material-icons-round" style="font-size:48px;display:block;margin-bottom:12px;opacity:.3">flag</span>Nenhuma denúncia ainda</div>`;
-    return;
-  }
-  const openCount = reports.filter(r => r.status === 'open').length;
-  el.innerHTML = `
-    <div style="padding:12px 24px 8px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06)">
-      <p style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3)">Total: ${reports.length}</p>
-      ${openCount > 0 ? `<span class="sa-report-badge open">${openCount} aberta${openCount !== 1 ? 's' : ''}</span>` : ''}
-    </div>
-    ${reports.map(r => {
-      const date = new Date(r.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-      const badgeClass = r.status === 'resolved' ? 'resolved' : r.status === 'dismissed' ? 'dismissed' : 'open';
-      const badgeLabel = r.status === 'resolved' ? 'Resolvida' : r.status === 'dismissed' ? 'Ignorada' : 'Aberta';
-      return `<div class="sa-report-row">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
-          <div>
-            <strong style="color:white;font-size:14px;font-family:var(--font-display)">${esc(r.storeName)}</strong>
-            <p style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px">${esc(r.reporterName)} · ${date}</p>
-          </div>
-          <span class="sa-report-badge ${badgeClass}">${badgeLabel}</span>
-        </div>
-        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border-radius:100px;padding:4px 12px;margin-bottom:8px">
-          <span class="material-icons-round" style="font-size:13px;color:var(--accent)">label</span>
-          <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.6)">${esc(r.category)}</span>
-        </div>
-        ${r.desc ? `<p style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.5;margin-bottom:10px">${esc(r.desc)}</p>` : ''}
-        ${r.status === 'open' ? `<div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="updateReportStatus('${r.id}','resolved')" style="flex:1;background:rgba(26,158,94,.12);border:1px solid rgba(26,158,94,.3);color:#1A9E5E;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;min-width:100px"><span class="material-icons-round" style="font-size:14px">check_circle</span> Resolvida</button>
-          <button onclick="updateReportStatus('${r.id}','dismissed')" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;min-width:100px"><span class="material-icons-round" style="font-size:14px">remove_circle_outline</span> Ignorar</button>
-          <button onclick="goToDeleteStoreFromReport('${r.storeId}','${esc(r.storeName)}')" style="background:rgba(255,61,46,.1);border:1px solid rgba(255,61,46,.25);color:var(--accent);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"><span class="material-icons-round" style="font-size:14px">delete_forever</span> Remover loja</button>
-        </div>` : ''}
-      </div>`;
-    }).join('')}`;
-}
-
-async function updateReportStatus(reportId, status) {
-  await db.ref('reports/' + reportId).update({ status });
-  toast(status === 'resolved' ? 'Denúncia marcada como resolvida' : 'Denúncia ignorada');
-  loadSAReports();
-}
-
-function goToDeleteStoreFromReport(storeId, storeName) {
-  if (!storeId || !storesData[storeId]) { toast('Restaurante não encontrado ou já removido', 'error'); return; }
-  closeSuperAdminPanel();
-  homeDeleteStore(storeId, storeName);
-}
 </script>
 
 <!-- DELETE CONFIRM PAGE -->
