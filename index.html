@@ -1172,37 +1172,7 @@ function resetGoogleBtn() {
   </svg> Continuar com Google`;
 }
 
-auth.getRedirectResult()
-  .then(result => {
-    if (result && result.user) {
-      const pendingRole = sessionStorage.getItem('dt_pending_role') || 'customer';
-      sessionStorage.removeItem('dt_pending_role');
-      return handleGoogleResult(result, pendingRole);
-    }
-  })
-  .catch(err => {
-    if (err.code && err.code !== 'auth/no-auth-event') console.error('Redirect result error:', err.code, err.message);
-  });
 
-auth.onAuthStateChanged(firebaseUser => {
-  if (firebaseUser && !userProfile) {
-    db.ref('suspensions/' + firebaseUser.uid).once('value').then(snap => {
-      const data = snap.val();
-      if (data && data.banned) { auth.signOut(); showBannedScreen(data); return; }
-      const stored = JSON.parse(localStorage.getItem('dt_user') || 'null');
-      if (stored && stored.id === firebaseUser.uid) {
-        userProfile = stored;
-        if (firebaseUser.photoURL) userProfile.photoURL = firebaseUser.photoURL;
-        if (firebaseUser.email && firebaseUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-          userProfile.role = 'admin';
-        }
-        localStorage.setItem('dt_user', JSON.stringify(userProfile));
-        document.getElementById('onboarding').style.display = 'none';
-        applyProfile();
-      }
-    }).catch(() => {});
-  }
-});
 
 // ══════════════════════════════════════════════
 //  STATE
@@ -2129,15 +2099,67 @@ function toast(msg, type = 'success') {
 //  INIT
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
+  document.querySelectorAll('.page').forEach(p => {
+    p.style.display = 'none';
+    p.classList.remove('active');
+  });
+
+  // ✅ Listeners do Firebase agora ficam aqui, após tudo estar carregado
+  auth.getRedirectResult()
+    .then(result => {
+      if (result && result.user) {
+        const pendingRole = sessionStorage.getItem('dt_pending_role') || 'customer';
+        sessionStorage.removeItem('dt_pending_role');
+        return handleGoogleResult(result, pendingRole);
+      }
+    })
+    .catch(err => {
+      if (err.code && err.code !== 'auth/no-auth-event')
+        console.error('Redirect result error:', err.code, err.message);
+    });
+
+  auth.onAuthStateChanged(firebaseUser => {
+    if (firebaseUser && !userProfile) {
+      db.ref('suspensions/' + firebaseUser.uid).once('value').then(snap => {
+        const data = snap.val();
+        if (data && data.banned) { auth.signOut(); showBannedScreen(data); return; }
+        const stored = JSON.parse(localStorage.getItem('dt_user') || 'null');
+        if (stored && stored.id === firebaseUser.uid) {
+          userProfile = stored;
+          if (firebaseUser.photoURL) userProfile.photoURL = firebaseUser.photoURL;
+          if (firebaseUser.email && firebaseUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+            userProfile.role = 'admin';
+          }
+          localStorage.setItem('dt_user', JSON.stringify(userProfile));
+          document.getElementById('onboarding').style.display = 'none';
+          applyProfile();
+        }
+      }).catch(() => {});
+    }
+  });
+
+  db.ref('stores').on('value', snap => {
+    storesData = snap.val() || {};
+    renderHome();
+    checkLocalStoreStatus();
+    if (currentStoreId && storesData[currentStoreId]) renderMenu(currentStoreId);
+    if (userProfile?.role === 'owner' && userProfile.storeId) listenIncomingOrders(userProfile.storeId);
+    if (pageStack.includes('sa-admin-page')) renderSuperAdminStores();
+  });
+
   if (userProfile) {
     document.getElementById('onboarding').style.display = 'none';
     db.ref('suspensions/' + userProfile.id).once('value').then(snap => {
       const data = snap.val();
       if (data && data.banned) { showBannedScreen(data); startBanWatcher(); }
-      else { applyProfile(); const myId = localStorage.getItem('my_store_id'); if (myId) listenIncomingOrders(myId); }
+      else {
+        applyProfile();
+        const myId = localStorage.getItem('my_store_id');
+        if (myId) listenIncomingOrders(myId);
+      }
     }).catch(() => { applyProfile(); });
   }
+
   initSuperAdminTrigger();
 });
 
