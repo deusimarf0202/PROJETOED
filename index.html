@@ -1811,11 +1811,20 @@ function renderIncomingOrders() {
       <div class="incoming-items">${esc(itemsText)}</div>
       ${o.note ? `<div class="incoming-address"><span class="material-icons-round">chat_bubble_outline</span><span>${esc(o.note)}</span></div>` : ''}
       <div class="incoming-address"><span class="material-icons-round">place</span><span>${esc(o.address)}</span></div>
-      <div style="padding:0 16px 14px;display:flex;align-items:center;gap:10px"><label style="font-size:12px;color:var(--muted);font-weight:600">Status:</label><select class="status-select" onchange="updateOrderStatus('${o.id}',this.value)">${statusOpts.replace(`value="${o.status}"`, `value="${o.status}" selected`)}</select></div>
+      <div style="padding:0 16px 14px;display:flex;align-items:center;gap:10px"><label style="font-size:12px;color:var(--muted);font-weight:600">Status:</label><select class="status-select" onchange="updateOrderStatus('${o.id}',this.value)">${statusOpts.replace(`value="${o.status}"`, `value="${o.status}" selected`)}</select>
+        <button onclick="deleteOrder('${o.id}')" style="background:rgba(255,61,46,.08);border:1px solid rgba(255,61,46,.2);color:#FF6B6B;padding:7px 10px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;gap:4px;margin-left:auto">
+          <span class="material-icons-round" style="font-size:14px">delete</span>
+        </button>
+      </div>
     </div>`;
   }).join('');
 }
 
+async function deleteOrder(orderId) {
+  if (!confirm('Remover este pedido do histórico?')) return;
+  await db.ref('orders/' + orderId).remove();
+  toast('Pedido removido');
+}
 async function updateOrderStatus(orderId, newStatus) {
   await db.ref('orders/' + orderId).update({ status: newStatus });
   toast('Status atualizado!');
@@ -2625,9 +2634,10 @@ function loadSAChatMessages(convId, userPhotoURL, userName) {
         ? `<div class="sa-msg-avatar"><img src="${esc(msgPhotoURL)}" alt="${initial}" onerror="this.parentElement.textContent='${initial}'"></div>`
         : `<div class="sa-msg-avatar" style="${isUser ? '' : 'background:#2563EB;color:white'}">${isUser ? initial : 'S'}</div>`;
       // ✅ botão de apagar mensagem individual
-      const delBtn = `<button class="sa-msg-del-btn" onclick="deleteSAMessage('${convId}','${m.id}')">
-        <span class="material-icons-round" style="font-size:11px">delete</span> apagar
-      </button>`;
+      const delBtn = m.id ? `<button class="sa-msg-del-btn" onclick="deleteSAMessage('${convId}','${m.id}')">
+  <span class="material-icons-round" style="font-size:11px">delete</span> apagar
+</button>` : '';
+      
       if (isUser) {
         return `<div class="sa-msg-wrap user">
           <div class="sa-msg user"><div class="sa-msg-with-avatar">${avatarHtml}<div><div class="sa-msg-bubble">${esc(m.text)}</div><div class="sa-msg-time">${esc(m.userName || userName || '')} · ${time}</div></div></div></div>
@@ -2691,6 +2701,14 @@ function renderSuperAdminStores() {
   list.innerHTML = stores.map(s => {
     const prodCount = Object.keys(s.products || {}).length, revCount = Object.keys(s.reviews || {}).length;
     const { avg } = getStoreRating(s.id);
+    const reviewsHtml = Object.entries(s.reviews || {}).map(([rid, r]) =>
+  `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+    <span style="font-size:12px;color:rgba(255,255,255,.5);flex:1">⭐ ${r.rating} · ${esc(r.authorName)} · "${esc((r.text||'').substring(0,40))}${(r.text||'').length>40?'…':''}"</span>
+    <button onclick="saDeleteReview('${s.id}','${rid}')" style="background:rgba(255,61,46,.1);border:1px solid rgba(255,61,46,.2);border-radius:6px;padding:4px 8px;cursor:pointer;display:flex;align-items:center;gap:4px;color:#FF6B6B;font-size:11px;font-family:var(--font-body)">
+      <span class="material-icons-round" style="font-size:13px">delete</span>
+    </button>
+  </div>`
+).join('');
     const typeLabel = s.type === 'restaurant' ? 'Restaurante' : 'Delivery';
     const saLocParts = [s.city, s.state, s.country].filter(Boolean); const saLoc = saLocParts.join(', ');
     return `<div class="sa-store-row" id="sa-row-${s.id}">
@@ -2702,7 +2720,11 @@ function renderSuperAdminStores() {
         ${s.phone ? `<span style="font-size:10px;opacity:.5">📞 ${esc(s.phone)}</span>` : ''}
       </div>
       <button class="sa-del-btn" onclick="superAdminDeleteStore('${s.id}','${esc(s.name)}')"><span class="material-icons-round">delete_forever</span></button>
-    </div>`;
+    </div>
+    ${revCount > 0 ? `<details style="margin:0 24px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;overflow:hidden">
+      <summary style="padding:10px 14px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;list-style:none">▼ Ver ${revCount} avaliação${revCount!==1?'ões':'ão'}</summary>
+      <div style="padding:0 14px 8px">${reviewsHtml}</div>
+    </details>` : ''}`;
   }).join('');
 }
 
@@ -2789,6 +2811,12 @@ function openSAReports() {
   loadSAReports();
 }
 
+async function saDeleteReport(reportId) {
+  if (!confirm('Apagar esta denúncia permanentemente?')) return;
+  await db.ref('reports/' + reportId).remove();
+  toast('Denúncia removida');
+  loadSAReports();
+}
 async function loadSAReports() {
   const snap = await db.ref('reports').once('value');
   const data = snap.val() || {};
@@ -2841,7 +2869,8 @@ async function loadSAReports() {
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
           <button onclick="updateReportStatus('${r.id}','resolved')" style="flex:1;background:rgba(26,158,94,.12);border:1px solid rgba(26,158,94,.3);color:#1A9E5E;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;min-width:100px"><span class="material-icons-round" style="font-size:14px">check_circle</span> Resolvida</button>
           <button onclick="updateReportStatus('${r.id}','dismissed')" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;min-width:100px"><span class="material-icons-round" style="font-size:14px">remove_circle_outline</span> Ignorar</button>
-          <button onclick="goToDeleteStoreFromReport('${r.storeId}','${esc(r.storeName)}')" style="background:rgba(255,61,46,.1);border:1px solid rgba(255,61,46,.25);color:var(--accent);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"><span class="material-icons-round" style="font-size:14px">delete_forever</span> Remover loja</button>
+           <button onclick="goToDeleteStoreFromReport('${r.storeId}','${esc(r.storeName)}')" style="background:rgba(255,61,46,.1);border:1px solid rgba(255,61,46,.25);color:var(--accent);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"><span class="material-icons-round" style="font-size:14px">delete_forever</span> Remover loja</button>
+          <button onclick="saDeleteReport('${r.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.35);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"><span class="material-icons-round" style="font-size:14px">delete</span> Apagar denúncia</button>
         </div>` : replyHtml ? '' : ''}
       </div>`;
     }).join('')}`;
@@ -2857,6 +2886,51 @@ function goToDeleteStoreFromReport(storeId, storeName) {
   if (!storeId || !storesData[storeId]) { toast('Restaurante não encontrado ou já removido', 'error'); return; }
   closeSuperAdminPanel();
   homeDeleteStore(storeId, storeName);
+}
+
+async function renderSuspensionsList() {
+  const el = document.getElementById('sa-suspensions-list');
+  if (!el) return;
+  const snap = await db.ref('suspensions').once('value');
+  const data = snap.val() || {};
+  const entries = Object.entries(data).sort((a, b) => (b[1].count || 0) - (a[1].count || 0));
+  if (!entries.length) {
+    el.innerHTML = `<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0;text-align:center">Nenhuma suspensão registrada</p>`;
+    return;
+  }
+  el.innerHTML = entries.map(([uid, s]) => {
+    const isBanned = s.banned;
+    const count = s.count || 0;
+    const name = s.ownerName || 'Desconhecido';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <div style="flex:1;min-width:0">
+        <p style="font-size:13px;font-weight:600;color:${isBanned ? '#EF4444' : 'rgba(255,255,255,.7)'}">${esc(name)}</p>
+        <p style="font-size:11px;color:rgba(255,255,255,.3);margin-top:2px">${isBanned ? '🚫 Banido permanentemente' : `⚠️ ${count}/3 suspensões`}</p>
+      </div>
+      ${isBanned
+        ? `<button onclick="liftBan('${uid}')" style="background:rgba(26,158,94,.12);border:1px solid rgba(26,158,94,.3);color:#1A9E5E;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;gap:4px">
+            <span class="material-icons-round" style="font-size:13px">lock_open</span> Desbanir
+          </button>`
+        : `<button onclick="resetSuspensions('${uid}')" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;gap:4px">
+            <span class="material-icons-round" style="font-size:13px">restart_alt</span> Zerar
+          </button>`
+      }
+    </div>`;
+  }).join('');
+}
+
+async function resetSuspensions(uid) {
+  if (!confirm('Zerar as suspensões deste usuário?')) return;
+  await db.ref('suspensions/' + uid).update({ count: 0, banned: false, history: [] });
+  toast('Suspensões zeradas');
+  renderSuspensionsList();
+}
+
+async function saDeleteReview(storeId, reviewId) {
+  if (!confirm('Apagar esta avaliação?')) return;
+  await db.ref('stores/' + storeId + '/reviews/' + reviewId).remove();
+  toast('Avaliação removida');
+  if (saCurrentPanel === 'stores') renderSuperAdminStores();
 }
 
 async function submitReportReply(reportId) {
