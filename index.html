@@ -628,15 +628,19 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 
 <!-- ORDERS PAGE -->
 <section id="orders" class="page">
-  <div class="orders-page">
-    <div class="orders-hero">
+   <div class="orders-hero" style="display:flex;flex-direction:column;align-items:flex-start">
       <h2>Meus Pedidos</h2>
       <p>Acompanhe em tempo real</p>
+      <button id="clear-orders-btn" onclick="clearOrdersHistory()"
+        style="display:none;margin-top:14px;background:rgba(255,255,255,.08);
+        border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.65);
+        padding:8px 16px;border-radius:100px;font-size:12px;font-weight:600;
+        font-family:var(--font-body);cursor:pointer;align-items:center;gap:6px;
+        transition:all .2s">
+        <span class="material-icons-round" style="font-size:15px">delete_sweep</span>
+        Limpar histórico
+      </button>
     </div>
-    <div id="orders-list" style="padding-top:4px">
-      <div class="loader-wrap"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-    </div>
-  </div>
 </section>
 
 <!-- SUPPORT PAGE -->
@@ -645,6 +649,17 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
     <h2>Central de<br><em>Suporte</em></h2>
     <p>Fale conosco — respondemos rapidinho!</p>
     <div class="support-status-bar">
+      <button id="clear-support-btn" onclick="clearSupportHistory()"
+    style="display:none;margin-top:14px;background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.5);
+    padding:7px 14px;border-radius:100px;font-size:12px;font-weight:600;
+    font-family:var(--font-body);cursor:pointer;display:inline-flex;
+    align-items:center;gap:6px;transition:all .2s"
+    onmouseover="this.style.background='rgba(255,61,46,.2)'"
+    onmouseout="this.style.background='rgba(255,255,255,.07)'">
+    <span class="material-icons-round" style="font-size:15px">delete_sweep</span>
+    Apagar conversa
+  </button>
       <span class="online-dot"></span>
       <span>Suporte online</span>
     </div>
@@ -2971,6 +2986,107 @@ async function submitReportReply(reportId) {
   toast('Resposta enviada ao usuário!');
   loadSAReports();
 }
+// ══════════════════════════════════════════════
+//  MODAL DE CONFIRMAÇÃO (substitui confirm() nativo)
+// ══════════════════════════════════════════════
+let _confirmCallback = null;
+
+function showConfirmModal({ title, desc, btnLabel = 'Confirmar', btnColor = 'var(--accent)', iconName = 'delete_sweep', iconBg = 'var(--accent-light)', iconColor = 'var(--accent)', onConfirm }) {
+  document.getElementById('confirm-modal-title').textContent = title;
+  document.getElementById('confirm-modal-desc').textContent = desc;
+  const btn = document.getElementById('confirm-modal-btn');
+  btn.textContent = btnLabel;
+  btn.style.background = btnColor;
+  const icon = document.getElementById('confirm-modal-icon');
+  icon.style.background = iconBg;
+  icon.querySelector('.material-icons-round').textContent = iconName;
+  icon.querySelector('.material-icons-round').style.color = iconColor;
+  _confirmCallback = onConfirm;
+  const modal = document.getElementById('confirm-modal');
+  modal.style.display = 'flex';
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  _confirmCallback = null;
+}
+
+document.getElementById('confirm-modal-btn').addEventListener('click', () => {
+  closeConfirmModal();
+  if (_confirmCallback) _confirmCallback();
+});
+
+// ══════════════════════════════════════════════
+//  APAGAR HISTÓRICO DE PEDIDOS
+// ══════════════════════════════════════════════
+function clearOrdersHistory() {
+  showConfirmModal({
+    title: 'Limpar histórico?',
+    desc: 'Todos os seus pedidos entregues serão removidos. Pedidos ativos não serão afetados.',
+    btnLabel: 'Limpar',
+    btnColor: 'var(--accent)',
+    iconName: 'delete_sweep',
+    onConfirm: async () => {
+      const snap = await db.ref('orders')
+        .orderByChild('customerId')
+        .equalTo(userProfile.id)
+        .once('value');
+      const orders = snap.val() || {};
+      const toDelete = Object.entries(orders)
+        .filter(([, o]) => o.status === 'delivered');
+      if (!toDelete.length) { toast('Nenhum pedido entregue para remover'); return; }
+      const updates = {};
+      toDelete.forEach(([id]) => { updates['orders/' + id] = null; });
+      await db.ref().update(updates);
+      toast(`🗑️ ${toDelete.length} pedido${toDelete.length !== 1 ? 's' : ''} removido${toDelete.length !== 1 ? 's' : ''}!`);
+      renderOrdersPage();
+    }
+  });
+}
+
+// Atualiza renderOrdersList para mostrar/ocultar o botão
+const _origRenderOrdersList = renderOrdersList;
+function renderOrdersList(orders) {
+  _origRenderOrdersList(orders);
+  const arr = Object.values(orders);
+  const btn = document.getElementById('clear-orders-btn');
+  if (btn) {
+    const hasDelivered = arr.some(o => o.status === 'delivered');
+    btn.style.display = hasDelivered ? 'inline-flex' : 'none';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  APAGAR HISTÓRICO DE SUPORTE
+// ══════════════════════════════════════════════
+function clearSupportHistory() {
+  showConfirmModal({
+    title: 'Apagar conversa?',
+    desc: 'Todas as mensagens desta conversa serão removidas permanentemente. O suporte não verá mais o histórico.',
+    btnLabel: 'Apagar tudo',
+    btnColor: '#2563EB',
+    iconName: 'chat_bubble_outline',
+    iconBg: 'var(--info-bg)',
+    iconColor: 'var(--info)',
+    onConfirm: async () => {
+      const convId = 'conv_' + userProfile.id;
+      await db.ref('support/' + convId).remove();
+      toast('💬 Conversa apagada!');
+      renderSupportMessages({});
+    }
+  });
+}
+
+// Mostra botão quando há mensagens no suporte
+const _origRenderSupportMessages = renderSupportMessages;
+function renderSupportMessages(msgs) {
+  _origRenderSupportMessages(msgs);
+  const btn = document.getElementById('clear-support-btn');
+  if (btn) {
+    const hasMessages = Object.keys(msgs || {}).length > 0;
+    btn.style.display = hasMessages ? 'inline-flex' : 'none';
+  }
+}
 </script>
 
 
@@ -3124,5 +3240,45 @@ async function submitReportReply(reportId) {
   </div>
 </section>
 
+  <!-- CONFIRM MODAL -->
+<div id="confirm-modal" style="display:none;position:fixed;inset:0;z-index:9990;
+  display:none;flex-direction:column;justify-content:flex-end">
+  <div id="confirm-modal-bg" onclick="closeConfirmModal()"
+    style="position:absolute;inset:0;background:rgba(0,0,0,.5);
+    backdrop-filter:blur(4px)"></div>
+  <div style="position:relative;background:var(--surface);
+    border-radius:var(--r-xl) var(--r-xl) 0 0;
+    padding:28px 24px calc(28px + env(safe-area-inset-bottom,0px));
+    animation:slideUp .3s cubic-bezier(.22,1,.36,1)">
+    <div style="width:40px;height:4px;background:var(--border);
+      border-radius:4px;margin:0 auto 20px"></div>
+    <div id="confirm-modal-icon" style="width:52px;height:52px;border-radius:16px;
+      background:var(--accent-light);display:flex;align-items:center;
+      justify-content:center;margin-bottom:14px">
+      <span class="material-icons-round" style="font-size:26px;color:var(--accent)">
+        delete_sweep</span>
+    </div>
+    <h3 id="confirm-modal-title" style="font-family:var(--font-display);
+      font-size:20px;font-weight:800;margin-bottom:6px"></h3>
+    <p id="confirm-modal-desc" style="font-size:14px;color:var(--muted);
+      line-height:1.6;margin-bottom:24px"></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button onclick="closeConfirmModal()"
+        style="padding:15px;border-radius:var(--r-sm);
+        border:1.5px solid var(--border);background:var(--bg);
+        font-family:var(--font-display);font-size:15px;font-weight:700;
+        color:var(--muted);cursor:pointer">
+        Cancelar
+      </button>
+      <button id="confirm-modal-btn"
+        style="padding:15px;border-radius:var(--r-sm);border:none;
+        background:var(--accent);font-family:var(--font-display);
+        font-size:15px;font-weight:800;color:white;cursor:pointer;
+        transition:background .15s">
+        Confirmar
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
