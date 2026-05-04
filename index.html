@@ -2604,14 +2604,19 @@ function openSASupport() {
 function loadSAConversations() {
   saConvListener = function(snap) {
     const data = snap.val() || {};
-    const list = document.getElementById('sa-conv-list'); if (!list) return;
-    // ✅ Pendentes (hasUnread=true) vêm primeiro, depois por data
-    const convs = Object.values(data).sort((a, b) => {
-      const aUnread = a.meta?.hasUnread ? 1 : 0;
-      const bUnread = b.meta?.hasUnread ? 1 : 0;
-      if (bUnread !== aUnread) return bUnread - aUnread; // pendentes primeiro
-      return (b.meta?.at || 0) - (a.meta?.at || 0);
-    });
+    const list = document.getElementById('sa-conv-list');
+    if (!list) return;
+
+    // Filtra apenas conversas válidas (que têm 'meta')
+    const convs = Object.values(data)
+      .filter(c => c && c.meta)  // ← ESTA É A CORREÇÃO PRINCIPAL
+      .sort((a, b) => {
+        const aUnread = a.meta?.hasUnread ? 1 : 0;
+        const bUnread = b.meta?.hasUnread ? 1 : 0;
+        if (bUnread !== aUnread) return bUnread - aUnread;
+        return (b.meta?.at || 0) - (a.meta?.at || 0);
+      });
+
     const pendingCount = convs.filter(c => c.meta?.hasUnread).length;
     const countEl = document.getElementById('sa-pending-count');
     if (countEl) countEl.textContent = pendingCount > 0 ? `${pendingCount} pendente${pendingCount !== 1 ? 's' : ''}` : '';
@@ -2620,6 +2625,7 @@ function loadSAConversations() {
       list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.3)"><span class="material-icons-round" style="font-size:40px;display:block;margin-bottom:8px;opacity:.3">inbox</span>Nenhuma conversa ainda</div>`;
       return;
     }
+
     list.innerHTML = convs.map(conv => {
       const meta = conv.meta || {};
       const unread = meta.hasUnread;
@@ -2919,11 +2925,14 @@ async function saDeleteReport(reportId) {
   loadSAReports();
 }
 async function loadSAReports() {
+  await new Promise(r => setTimeout(r, 50));
   const snap = await db.ref('reports').once('value');
   const data = snap.val() || {};
   const el = document.getElementById('sa-reports-list');
   if (!el) return;
   const reports = Object.values(data).sort((a, b) => b.createdAt - a.createdAt);
+
+  
   if (!reports.length) {
     el.innerHTML = `<div style="text-align:center;padding:48px 20px;color:rgba(255,255,255,.3)"><span class="material-icons-round" style="font-size:48px;display:block;margin-bottom:12px;opacity:.3">flag</span>Nenhuma denúncia ainda</div>`;
     return;
