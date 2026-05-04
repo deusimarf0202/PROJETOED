@@ -514,6 +514,24 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 .sa-delete-conv-btn .material-icons-round{font-size:15px}
 /* ✅ NOVO: pendente badge */
 .sa-pending-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.4);border-radius:100px;padding:2px 8px;font-size:10px;font-weight:700;color:#60A5FA}
+/* ══ DENÚNCIAS ══ */
+.report-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,61,46,.08);border:1px solid rgba(255,61,46,.22);color:var(--accent);padding:9px 16px;border-radius:100px;font-size:13px;font-weight:600;font-family:var(--font-body);cursor:pointer;transition:all .2s;margin:12px 20px 0}
+.report-btn:hover{background:rgba(255,61,46,.15)}
+.report-btn .material-icons-round{font-size:16px}
+.report-category-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.report-cat-card{border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px 10px;cursor:pointer;text-align:center;transition:all .2s;background:var(--bg)}
+.report-cat-card.active{border-color:var(--accent);background:var(--accent-light)}
+.report-cat-card .material-icons-round{font-size:22px;color:var(--muted);display:block;margin-bottom:5px}
+.report-cat-card.active .material-icons-round{color:var(--accent)}
+.report-cat-card strong{font-size:12px;font-weight:700;font-family:var(--font-display);display:block;line-height:1.3}
+.report-cat-card.active strong{color:var(--accent)}
+/* SA Reports */
+.sa-report-row{padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s}
+.sa-report-row:hover{background:rgba(255,255,255,.03)}
+.sa-report-badge{display:inline-flex;align-items:center;gap:4px;border-radius:100px;padding:3px 10px;font-size:11px;font-weight:700;font-family:var(--font-display)}
+.sa-report-badge.open{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
+.sa-report-badge.resolved{background:rgba(26,158,94,.12);color:#1A9E5E;border:1px solid rgba(26,158,94,.25)}
+.sa-report-badge.dismissed{background:rgba(255,255,255,.06);color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.1)}
 </style>
 </head>
 <body>
@@ -908,6 +926,54 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
   <p style="font-size:12px;color:rgba(255,255,255,.2);text-align:center;max-width:260px;line-height:1.7;position:relative;z-index:1">
     Acredita que foi um engano?<br>Entre em contato com o suporte do DelivraTech.
   </p>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="cart-overlay" id="report-overlay">
+  <div class="cart-bg" onclick="closeReportModal()"></div>
+  <div class="cart-sheet" style="padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))">
+    <div class="cart-handle"></div>
+    <div class="cart-header">
+      <h3>Denunciar Restaurante</h3>
+      <span id="report-store-label" style="color:var(--muted);font-size:13px"></span>
+    </div>
+    <div style="padding:20px 24px 0">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Selecione o motivo da denúncia:</p>
+      <div class="report-category-grid" id="report-cat-grid">
+        <div class="report-cat-card" onclick="selectReportCat('Produto impróprio',this)">
+          <span class="material-icons-round">no_food</span>
+          <strong>Produto impróprio</strong>
+        </div>
+        <div class="report-cat-card" onclick="selectReportCat('Fraude / golpe',this)">
+          <span class="material-icons-round">gpp_bad</span>
+          <strong>Fraude / golpe</strong>
+        </div>
+        <div class="report-cat-card" onclick="selectReportCat('Atendimento abusivo',this)">
+          <span class="material-icons-round">sentiment_very_dissatisfied</span>
+          <strong>Atendimento abusivo</strong>
+        </div>
+        <div class="report-cat-card" onclick="selectReportCat('Informações falsas',this)">
+          <span class="material-icons-round">fact_check</span>
+          <strong>Informações falsas</strong>
+        </div>
+        <div class="report-cat-card" onclick="selectReportCat('Preço abusivo',this)">
+          <span class="material-icons-round">price_change</span>
+          <strong>Preço abusivo</strong>
+        </div>
+        <div class="report-cat-card" onclick="selectReportCat('Outro',this)">
+          <span class="material-icons-round">more_horiz</span>
+          <strong>Outro</strong>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Descrição (opcional)</label>
+        <textarea class="field-input" id="report-desc" placeholder="Descreva o ocorrido com detalhes…" rows="3" style="resize:none;line-height:1.5"></textarea>
+      </div>
+      <button class="checkout-btn" style="margin-top:8px;background:#F59E0B" onclick="submitReport()">
+        <span class="material-icons-round">flag</span> Enviar Denúncia
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- TOAST -->
@@ -1493,6 +1559,7 @@ function openMenu(storeId) {
   currentStoreId = storeId;
   renderMenu(storeId);
   renderReviews(storeId);
+  injectReportBtn(storeId, storesData[storeId]?.name || '');
   pushPage('menu-view');
 }
 
@@ -2300,6 +2367,16 @@ function renderSAPanel() {
         </div>
         <span class="material-icons-round" style="color:rgba(255,255,255,.25);font-size:20px">chevron_right</span>
       </div>
+      <div class="sa-menu-card" onclick="openSAReports()">
+  <div class="sa-menu-icon" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.25)">
+    <span class="material-icons-round" style="color:#F59E0B;font-size:26px">flag</span>
+  </div>
+  <div class="sa-menu-card-text">
+    <strong>Denúncias</strong>
+    <span>Veja e gerencie denúncias feitas por clientes contra restaurantes.</span>
+  </div>
+  <span class="material-icons-round" style="color:rgba(255,255,255,.25);font-size:20px">chevron_right</span>
+</div>
     </div>`;
   }
 }
@@ -2568,7 +2645,154 @@ async function superAdminDeleteStore(id, name) {
 }
 
 function saPasswordKeydown(e) { if (e.key === 'Enter') checkSuperAdminPassword(); if (e.key === 'Escape') closeSuperAdminLogin(); }
+
+// ══════════════════════════════════════════════
+//  DENÚNCIAS
+// ══════════════════════════════════════════════
+let reportStoreId = null, reportStoreName = '', selectedReportCat = '';
+
+function openReportModal(storeId, storeName) {
+  if (!userProfile) { toast('Faça login para denunciar', 'error'); return; }
+  reportStoreId = storeId; reportStoreName = storeName; selectedReportCat = '';
+  document.getElementById('report-store-label').textContent = storeName;
+  document.getElementById('report-desc').value = '';
+  document.querySelectorAll('.report-cat-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('report-overlay').classList.add('open');
+}
+function closeReportModal() { document.getElementById('report-overlay').classList.remove('open'); }
+
+function selectReportCat(cat, el) {
+  selectedReportCat = cat;
+  document.querySelectorAll('.report-cat-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function submitReport() {
+  if (!selectedReportCat) { toast('Selecione um motivo', 'error'); return; }
+  const desc = document.getElementById('report-desc').value.trim();
+  const ref = db.ref('reports').push();
+  await ref.set({
+    id: ref.key,
+    storeId: reportStoreId,
+    storeName: reportStoreName,
+    reporterId: userProfile.id,
+    reporterName: userProfile.name,
+    category: selectedReportCat,
+    desc: desc || '',
+    status: 'open',
+    createdAt: Date.now()
+  });
+  closeReportModal();
+  toast('Denúncia enviada. Obrigado!');
+}
+
+// ── Botão de denúncia no menu do restaurante ──
+// Chame injectReportBtn() logo após renderMenu()
+function injectReportBtn(storeId, storeName) {
+  const existing = document.getElementById('report-store-btn');
+  if (existing) existing.remove();
+  const btn = document.createElement('button');
+  btn.id = 'report-store-btn';
+  btn.className = 'report-btn';
+  btn.innerHTML = '<span class="material-icons-round">flag</span> Denunciar restaurante';
+  btn.onclick = () => openReportModal(storeId, storeName);
+  const reviewsSection = document.getElementById('reviews-section');
+  if (reviewsSection) reviewsSection.insertAdjacentElement('beforebegin', btn);
+}
+
+// ── Aba Denúncias no Super Admin ──
+function openSAReports() {
+  saCurrentPanel = 'reports';
+  const saTitle = document.getElementById('sa-panel-title');
+  const saBackBtn = document.getElementById('sa-back-btn');
+  if (saTitle) saTitle.textContent = 'Denúncias';
+  if (saBackBtn) saBackBtn.style.display = 'flex';
+  const body = document.getElementById('sa-body-content');
+  body.innerHTML = `<div id="sa-reports-list" style="padding-bottom:24px"><p style="font-size:13px;color:rgba(255,255,255,.3);text-align:center;padding:32px">Carregando denúncias…</p></div>`;
+  loadSAReports();
+}
+
+async function loadSAReports() {
+  const snap = await db.ref('reports').once('value');
+  const data = snap.val() || {};
+  const el = document.getElementById('sa-reports-list');
+  if (!el) return;
+  const reports = Object.values(data).sort((a, b) => b.createdAt - a.createdAt);
+  if (!reports.length) {
+    el.innerHTML = `<div style="text-align:center;padding:48px 20px;color:rgba(255,255,255,.3)"><span class="material-icons-round" style="font-size:48px;display:block;margin-bottom:12px;opacity:.3">flag</span>Nenhuma denúncia ainda</div>`;
+    return;
+  }
+  const openCount = reports.filter(r => r.status === 'open').length;
+  el.innerHTML = `
+    <div style="padding:12px 24px 8px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06)">
+      <p style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3)">Total: ${reports.length}</p>
+      ${openCount > 0 ? `<span class="sa-report-badge open">${openCount} aberta${openCount !== 1 ? 's' : ''}</span>` : ''}
+    </div>
+    ${reports.map(r => {
+      const date = new Date(r.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      const badgeClass = r.status === 'resolved' ? 'resolved' : r.status === 'dismissed' ? 'dismissed' : 'open';
+      const badgeLabel = r.status === 'resolved' ? 'Resolvida' : r.status === 'dismissed' ? 'Ignorada' : 'Aberta';
+      const replyHtml = r.reply
+        ? `<div class="sa-report-reply">
+            <div class="sa-report-reply-label"><span class="material-icons-round">support_agent</span>Resposta do suporte</div>
+            <div class="sa-report-reply-text">${esc(r.reply)}</div>
+           </div>`
+        : '';
+      const replyInputHtml = `
+        <textarea class="sa-report-reply-input" id="reply-input-${r.id}" placeholder="Escreva uma resposta interna para esta denúncia…" rows="2"></textarea>
+        <button class="sa-report-reply-btn" onclick="submitReportReply('${r.id}')">
+          <span class="material-icons-round">send</span> Enviar resposta
+        </button>`;
+      return `<div class="sa-report-row" id="sa-report-row-${r.id}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
+          <div>
+            <strong style="color:white;font-size:14px;font-family:var(--font-display)">${esc(r.storeName)}</strong>
+            <p style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px">${esc(r.reporterName)} · ${date}</p>
+          </div>
+          <span class="sa-report-badge ${badgeClass}">${badgeLabel}</span>
+        </div>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border-radius:100px;padding:4px 12px;margin-bottom:8px">
+          <span class="material-icons-round" style="font-size:13px;color:var(--accent)">label</span>
+          <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.6)">${esc(r.category)}</span>
+        </div>
+        ${r.desc ? `<p style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.5;margin-bottom:10px">${esc(r.desc)}</p>` : ''}
+        ${replyHtml}
+        ${r.status === 'open' ? `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05)">
+          ${replyInputHtml}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button onclick="updateReportStatus('${r.id}','resolved')" style="flex:1;background:rgba(26,158,94,.12);border:1px solid rgba(26,158,94,.3);color:#1A9E5E;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;min-width:100px"><span class="material-icons-round" style="font-size:14px">check_circle</span> Resolvida</button>
+          <button onclick="updateReportStatus('${r.id}','dismissed')" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;min-width:100px"><span class="material-icons-round" style="font-size:14px">remove_circle_outline</span> Ignorar</button>
+          <button onclick="goToDeleteStoreFromReport('${r.storeId}','${esc(r.storeName)}')" style="background:rgba(255,61,46,.1);border:1px solid rgba(255,61,46,.25);color:var(--accent);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"><span class="material-icons-round" style="font-size:14px">delete_forever</span> Remover loja</button>
+        </div>` : replyHtml ? '' : ''}
+      </div>`;
+    }).join('')}`;
+}
+
+async function updateReportStatus(reportId, status) {
+  await db.ref('reports/' + reportId).update({ status });
+  toast(status === 'resolved' ? 'Denúncia marcada como resolvida' : 'Denúncia ignorada');
+  loadSAReports();
+}
+
+function goToDeleteStoreFromReport(storeId, storeName) {
+  if (!storeId || !storesData[storeId]) { toast('Restaurante não encontrado ou já removido', 'error'); return; }
+  closeSuperAdminPanel();
+  homeDeleteStore(storeId, storeName);
+}
+
+async function submitReportReply(reportId) {
+  const ta = document.getElementById('reply-input-' + reportId);
+  if (!ta) return;
+  const text = ta.value.trim();
+  if (!text) { toast('Escreva uma resposta antes de enviar', 'error'); return; }
+  await db.ref('reports/' + reportId).update({ reply: text, repliedAt: Date.now() });
+  toast('Resposta salva!');
+  loadSAReports();
+}
 </script>
+
 
 <!-- DELETE CONFIRM PAGE -->
 <section id="del-confirm-page" class="page fullscreen" style="background:var(--surface)">
@@ -2687,6 +2911,15 @@ function saPasswordKeydown(e) { if (e.key === 'Enter') checkSuperAdminPassword()
 .sa-warning-bar{background:rgba(255,61,46,.08);border:1px solid rgba(255,61,46,.2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px}
 .sa-warning-bar .material-icons-round{font-size:16px;color:var(--accent);flex-shrink:0}
 .sa-warning-bar span{font-size:12px;color:rgba(255,255,255,.5);line-height:1.4}
+/* Resposta de denúncia */
+.sa-report-reply{background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:10px;padding:12px 14px;margin-top:10px}
+.sa-report-reply-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#60A5FA;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.sa-report-reply-text{font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
+.sa-report-reply-input{width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 14px;font-family:var(--font-body);font-size:13px;color:white;outline:none;resize:none;max-height:80px;line-height:1.4;margin-top:10px}
+.sa-report-reply-input::placeholder{color:rgba(255,255,255,.25)}
+.sa-report-reply-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.35);color:#60A5FA;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;margin-top:8px;transition:all .2s}
+.sa-report-reply-btn:hover{background:rgba(37,99,235,.35)}
+.sa-report-reply-btn .material-icons-round{font-size:14px}
 </style>
   <div class="sa-header">
     <div class="sa-header-row">
