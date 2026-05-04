@@ -2787,8 +2787,37 @@ async function submitReportReply(reportId) {
   if (!ta) return;
   const text = ta.value.trim();
   if (!text) { toast('Escreva uma resposta antes de enviar', 'error'); return; }
+
+  // Salva a resposta na denúncia
   await db.ref('reports/' + reportId).update({ reply: text, repliedAt: Date.now() });
-  toast('Resposta salva!');
+
+  // Busca os dados da denúncia para saber quem é o denunciante
+  const snap = await db.ref('reports/' + reportId).once('value');
+  const report = snap.val();
+  if (report && report.reporterId) {
+    const convId = 'conv_' + report.reporterId;
+    const ref = db.ref('support/' + convId + '/messages').push();
+    const msg = {
+      id: ref.key,
+      from: 'support',
+      text: `📋 Sua denúncia sobre "${report.storeName}" foi respondida:\n\n${text}`,
+      at: Date.now(),
+      adminName: 'Suporte DelivraTech',
+      adminPhotoURL: null,
+      readByUser: false,
+      readByAdmin: true
+    };
+    await ref.set(msg);
+    await db.ref('support/' + convId + '/meta').update({
+      lastMsg: `Resposta sobre sua denúncia de "${report.storeName}"`,
+      at: Date.now(),
+      userName: report.reporterName,
+      userId: report.reporterId,
+      hasUnread: true
+    });
+  }
+
+  toast('Resposta enviada ao usuário!');
   loadSAReports();
 }
 </script>
