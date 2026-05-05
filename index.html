@@ -1063,9 +1063,10 @@ const auth = firebase.auth();
 const ADMIN_EMAIL = 'deusimarfirme600@gmail.com';
 function hideSplash() {
   const s = document.getElementById('splash-screen');
-  if (!s) return;
+  if (!s || s._hidden) return;
+  s._hidden = true;
   s.style.animation = 'splashFade .5s ease forwards';
-  setTimeout(() => s.remove(), 500);
+  setTimeout(() => { if (s.parentNode) s.remove(); }, 500);
 }
 const VERIFIED_EMAIL = ADMIN_EMAIL;
 
@@ -1190,11 +1191,21 @@ auth.onAuthStateChanged(firebaseUser => {
 //  STATE
 // ══════════════════════════════════════════════
 
+  
+let supportListenerRef = null;
+let supportListenerConvId = null;
+
 let storesData = {};
 let currentStoreId = null;
-let cart = JSON.parse(localStorage.getItem('dt_cart') || '{}');
-let deliveryType = 'delivery';
 let userProfile = JSON.parse(localStorage.getItem('dt_user') || 'null');
+let cart = (() => {
+  try {
+    const uid = userProfile ? userProfile.id : null;
+    const key = uid ? 'dt_cart_' + uid : 'dt_cart';
+    return JSON.parse(localStorage.getItem(key) || '{}');
+  } catch(e) { return {}; }
+})();
+let deliveryType = 'delivery';
 let activeFilter = 'all';
 let userLat = null, userLng = null;
 let myStoreOrders = {};
@@ -1309,7 +1320,7 @@ function setupOrdersListener() {
     const orders = snap.val() || {};
     const hasActive = Object.values(orders).some(o => o.status && o.status !== 'delivered');
     document.getElementById('orders-notif').style.display = hasActive ? 'block' : 'none';
-    if (document.getElementById('orders').classList.contains('active')) renderOrdersList(orders);
+    if (pageStack[pageStack.length - 1] === 'orders') renderOrdersList(orders);
   });
 }
 
@@ -1318,8 +1329,12 @@ function setupOrdersListener() {
 // ══════════════════════════════════════════════
 function setupSupportListener() {
   if (!userProfile) return;
+  if (supportListenerRef && supportListenerConvId) {
+    db.ref('support/' + supportListenerConvId + '/messages').off('value', supportListenerRef);
+  }
   const convId = 'conv_' + userProfile.id;
-  db.ref('support/' + convId + '/messages').on('value', snap => {
+  supportListenerConvId = convId;
+  supportListenerRef = db.ref('support/' + convId + '/messages').on('value', snap => {
     const msgs = snap.val() || {};
     const hasUnread = Object.values(msgs).some(m => m.from === 'support' && !m.readByUser);
     document.getElementById('support-notif').style.display = hasUnread ? 'block' : 'none';
@@ -1407,6 +1422,7 @@ async function sendSupportMessage() {
   if (!text) return;
   ta.value = '';
   ta.style.height = 'auto';
+  ta.style.height = '24px';
   const convId = 'conv_' + userProfile.id;
   const ref = db.ref('support/' + convId + '/messages').push();
   const msg = {
@@ -1484,10 +1500,11 @@ function pushPage(id) {
     next.classList.remove('push-in'); next.classList.add('active');
     if (prev) { prev.classList.remove('push-under'); prev.style.display = 'none'; }
   }, { once: true });
-  updateNavBar(id);
+  updateNavBar(id);  
   if (id === 'orders') renderOrdersPage();
   if (id === 'cart-page') renderCartPage();
   if (id === 'support-page') setupSupportOnOpen();
+  if (id === 'admin') checkLocalStoreStatus();
 }
 
 function popPage() {
@@ -1558,13 +1575,19 @@ function tabTo(id) {
   if (id === 'orders') renderOrdersPage();
   if (id === 'cart-page') renderCartPage();
   if (id === 'support-page') setupSupportOnOpen();
+  if (id === 'admin') checkLocalStoreStatus();
 }
 
 function setupSupportOnOpen() {
   if (!userProfile) return;
   const convId = 'conv_' + userProfile.id;
   db.ref('support/' + convId + '/messages').once('value', snap => {
-    renderSupportMessages(snap.val() || {});
+    const msgs = snap.val() || {};
+    renderSupportMessages(msgs);
+    const clearBtn = document.getElementById('clear-support-btn');
+    if (clearBtn) {
+      clearBtn.style.display = Object.keys(msgs).length > 0 ? 'inline-flex' : 'none';
+    }
   });
 }
 
@@ -1632,7 +1655,7 @@ function renderHome() {
     const hoursLine = (s.openTime && s.closeTime) ? `<span class="meta-chip" style="color:${nowOpen ? 'var(--success)' : 'var(--accent)'}"><span class="material-icons-round" style="font-size:14px">schedule</span>${nowOpen ? 'Aberto agora' : 'Fechado'} · ${s.openTime}–${s.closeTime}</span>` : '';
     const feeLine = s.type !== 'restaurant' ? `<span class="meta-chip"><span class="material-icons-round">directions_bike</span>${s.deliveryFee > 0 ? 'Taxa R$ ' + parseFloat(s.deliveryFee).toFixed(2) : 'Grátis'}</span>` : '';
     const catLine = s.category ? `<span class="tag-pill" style="background:#F0F4FF;color:#4F6EF7;font-size:11px">${esc(s.category)}</span>` : '';
-    return `<div class="store-card" onclick="openMenu('${s.id}')">
+    return `<div class="store-card" onclick="openMenu('${escAttr(s.id)}')">
       <img src="${s.logo || ''}" class="store-card-img" onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80'" alt="">
       ${saSessionActive ? `<button class="card-del-btn" onclick="event.stopPropagation();homeDeleteStore('${s.id}','${esc(s.name)}')" title="Remover"><span class="material-icons-round">delete_forever</span></button>` : ''}
       <div class="store-card-body">
@@ -1725,7 +1748,8 @@ function updateCartBadge() {
   const badge = document.getElementById('cart-count');
   badge.textContent = total;
   badge.style.display = total > 0 ? 'flex' : 'none';
-  localStorage.setItem('dt_cart', JSON.stringify(cart));
+  const cartKey = userProfile ? 'dt_cart_' + userProfile.id : 'dt_cart';
+  localStorage.setItem(cartKey, JSON.stringify(cart));
   if (pageStack.includes('cart-page')) renderCartPage();
 }
 
@@ -1886,8 +1910,8 @@ function renderOrdersList(orders) {
       <div class="order-total-row"><span>Total</span><strong>R$ ${o.total.toFixed(2)}</strong></div>
       <div class="order-track-bar"><p style="font-size:12px;color:var(--muted);margin-bottom:12px">Rastreamento</p><div class="track-steps">${trackHtml}</div></div>
       ${isDone ? `<div class="order-actions">
-        <button class="order-rate-btn" onclick="openReviewFromOrder('${o.storeId}','${esc(o.storeName)}')"><span class="material-icons-round">star</span>Avaliar</button>
-        <button class="order-reorder-btn" onclick="tabTo('home');setTimeout(()=>openMenu('${o.storeId}'),350)"><span class="material-icons-round">replay</span>Pedir novamente</button>
+        <button class="order-rate-btn" onclick="openReviewFromOrder('${escAttr(o.storeId)}','${escAttr(o.storeName)}')"><span class="material-icons-round">star</span>Avaliar</button>
+        <button class="order-reorder-btn" onclick="tabTo('home');setTimeout(()=>openMenu('${escAttr(o.storeId)}'),350)">
       </div>` : ''}
     </div>`;
   }).join('');
@@ -2111,9 +2135,19 @@ function changeNameModal() {
 
 function logout() {
   if (!confirm('Sair da conta?')) return;
+  if (banWatcherRef && userProfile) {
+    db.ref('suspensions/' + userProfile.id).off('value', banWatcherRef);
+    banWatcherRef = null;
+  }
+  if (supportListenerRef && supportListenerConvId) {
+    db.ref('support/' + supportListenerConvId + '/messages').off('value', supportListenerRef);
+    supportListenerRef = null;
+    supportListenerConvId = null;
+  }
   if (userProfile?.googleAuth) auth.signOut().catch(() => {});
   localStorage.removeItem('dt_user');
   localStorage.removeItem('my_store_id');
+  if (userProfile) localStorage.removeItem('dt_cart_' + userProfile.id);
   localStorage.removeItem('dt_cart');
   userProfile = null; pageStack = [];
   document.querySelectorAll('.page').forEach(p => { p.classList.remove('active', 'push-in', 'pop-out', 'push-under', 'pop-restore'); p.style.display = 'none'; });
@@ -2128,6 +2162,9 @@ function logout() {
 //  HELPERS
 // ══════════════════════════════════════════════
 function esc(str) { const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML; }
+function escAttr(str) {
+  return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
 let toastTimer;
 function toast(msg, type = 'success') {
   const el = document.getElementById('toast');
@@ -2433,15 +2470,30 @@ function trapBannedKeyboard(e) { if (e.key === 'F5' || (e.ctrlKey && (e.key === 
 
 
 async function liftBan(ownerId) {
-  if (!confirm('Levantar o banimento deste usuário?')) return;
-  await db.ref('suspensions/' + ownerId).update({ banned: false, count: 0, history: [] });
-  toast('Banimento levantado'); renderSuspensionsList();
-  if (userProfile && userProfile.id === ownerId) {
-    userProfile.banned = false; userProfile.suspensions = 0; localStorage.setItem('dt_user', JSON.stringify(userProfile));
-    const bs = document.getElementById('banned-screen'); bs.classList.remove('visible'); bs.style.display = 'none';
-    document.querySelectorAll('.ob-btn,.ob-btn-google').forEach(btn => { btn.disabled = false; btn.style.pointerEvents = ''; btn.style.opacity = ''; });
-    document.removeEventListener('keydown', trapBannedKeyboard, true); applyProfile();
-  }
+  showConfirmModal({
+    title: 'Levantar banimento?',
+    desc: 'O usuário recuperará acesso total à plataforma.',
+    btnLabel: 'Desbanir',
+    btnColor: 'var(--success)',
+    iconName: 'lock_open',
+    iconBg: 'var(--success-bg)',
+    iconColor: 'var(--success)',
+    onConfirm: async () => {
+      await db.ref('suspensions/' + ownerId).update({ banned: false, count: 0, history: [] });
+      toast('Banimento levantado'); renderSuspensionsList();
+      if (userProfile && userProfile.id === ownerId) {
+        userProfile.banned = false; userProfile.suspensions = 0;
+        localStorage.setItem('dt_user', JSON.stringify(userProfile));
+        const bs = document.getElementById('banned-screen');
+        bs.classList.remove('visible'); bs.style.display = 'none';
+        document.querySelectorAll('.ob-btn,.ob-btn-google').forEach(btn => {
+          btn.disabled = false; btn.style.pointerEvents = ''; btn.style.opacity = '';
+        });
+        document.removeEventListener('keydown', trapBannedKeyboard, true);
+        applyProfile();
+      }
+    }
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -2550,6 +2602,10 @@ function renderSAPanel() {
 }
 
 function openSAStores() {
+  if (saConvListener) {
+    db.ref('support').off('value', saConvListener);
+    saConvListener = null;
+  }
   saCurrentPanel = 'stores';
   const body = document.getElementById('sa-body-content');
   const saTitle = document.getElementById('sa-panel-title');
@@ -2579,6 +2635,14 @@ function openSAStores() {
 
 function openSASupport() {
   if (saConvListener) { db.ref('support').off('value', saConvListener); saConvListener = null; }
+  // Atualiza stats no header
+  const statsEl = document.getElementById('sa-stats');
+  if (statsEl) {
+    const stores = Object.values(storesData);
+    const totalProds = stores.reduce((a,s)=>a+Object.keys(s.products||{}).length,0);
+    const totalRevs = stores.reduce((a,s)=>a+Object.keys(s.reviews||{}).length,0);
+    statsEl.innerHTML = `<div class="sa-stat"><div class="sa-stat-num">${stores.length}</div><div class="sa-stat-label">Lojas</div></div><div class="sa-stat"><div class="sa-stat-num">${totalProds}</div><div class="sa-stat-label">Pratos</div></div><div class="sa-stat"><div class="sa-stat-num">${totalRevs}</div><div class="sa-stat-label">Reviews</div></div>`;
+  }
   if (saChatMsgListener && saActiveChatConvId) { db.ref('support/' + saActiveChatConvId + '/messages').off('value', saChatMsgListener); saChatMsgListener = null; saActiveChatConvId = null; }
   saCurrentPanel = 'support';
   const body = document.getElementById('sa-body-content');
@@ -2830,18 +2894,26 @@ function renderSuperAdminStores() {
 }
 
 async function superAdminDeleteStore(id, name) {
-  const confirmed = confirm(`⚠️ AÇÃO IRREVERSÍVEL\n\nExcluir permanentemente:\n"${name}"\n\nConfirmar?`);
-  if (!confirmed) return;
-  const storeSnap = await db.ref('stores/' + id).once('value');
-  const storeData = storeSnap.val();
-  const ownerId = storeData?.ownerId || null; const ownerName = storeData?.ownerName || 'Desconhecido';
-  const row = document.getElementById('sa-row-' + id);
-  if (row) { row.style.transition = 'all .3s'; row.style.opacity = '0'; row.style.transform = 'translateX(40px)'; }
-  setTimeout(async () => {
-    await db.ref('stores/' + id).remove();
-    if (ownerId) { await issueSuspension(ownerId, ownerName, name); await sendStoreDeletedNotification(ownerId, ownerName, name); }
-    toast('Restaurante removido'); renderSuperAdminStores(); renderHome();
-  }, 300);
+  showConfirmModal({
+    title: 'Excluir restaurante?',
+    desc: `"${name}" será removido permanentemente. Esta ação é irreversível.`,
+    btnLabel: 'Excluir',
+    btnColor: 'var(--accent)',
+    iconName: 'delete_forever',
+    onConfirm: async () => {
+      const storeSnap = await db.ref('stores/' + id).once('value');
+      const storeData = storeSnap.val();
+      const ownerId = storeData?.ownerId || null;
+      const ownerName = storeData?.ownerName || 'Desconhecido';
+      const row = document.getElementById('sa-row-' + id);
+      if (row) { row.style.transition='all .3s'; row.style.opacity='0'; row.style.transform='translateX(40px)'; }
+      setTimeout(async () => {
+        await db.ref('stores/' + id).remove();
+        if (ownerId) { await issueSuspension(ownerId, ownerName, name); await sendStoreDeletedNotification(ownerId, ownerName, name); }
+        toast('Restaurante removido'); renderSuperAdminStores(); renderHome();
+      }, 300);
+    }
+  });
 }
 
 function saPasswordKeydown(e) { if (e.key === 'Enter') checkSuperAdminPassword(); if (e.key === 'Escape') closeSuperAdminLogin(); }
@@ -2902,7 +2974,19 @@ function injectReportBtn(storeId, storeName) {
 
 // ── Aba Denúncias no Super Admin ──
 function openSAReports() {
+  if (saConvListener) {
+    db.ref('support').off('value', saConvListener);
+    saConvListener = null;
+  }
   saCurrentPanel = 'reports';
+  // Atualiza stats no header
+  const statsEl = document.getElementById('sa-stats');
+  if (statsEl) {
+    const stores = Object.values(storesData);
+    const totalProds = stores.reduce((a,s)=>a+Object.keys(s.products||{}).length,0);
+    const totalRevs = stores.reduce((a,s)=>a+Object.keys(s.reviews||{}).length,0);
+    statsEl.innerHTML = `<div class="sa-stat"><div class="sa-stat-num">${stores.length}</div><div class="sa-stat-label">Lojas</div></div><div class="sa-stat"><div class="sa-stat-num">${totalProds}</div><div class="sa-stat-label">Pratos</div></div><div class="sa-stat"><div class="sa-stat-num">${totalRevs}</div><div class="sa-stat-label">Reviews</div></div>`;
+  }
   const saTitle = document.getElementById('sa-panel-title');
   const saBackBtn = document.getElementById('sa-back-btn');
   if (saTitle) saTitle.textContent = 'Denúncias';
@@ -3030,12 +3114,19 @@ async function renderSuspensionsList() {
 }
 
 async function resetSuspensions(uid) {
-  if (!confirm('Zerar as suspensões deste usuário?')) return;
-  await db.ref('suspensions/' + uid).update({ count: 0, banned: false, history: [] });
-  toast('Suspensões zeradas');
-  renderSuspensionsList();
+  showConfirmModal({
+    title: 'Zerar suspensões?',
+    desc: 'O contador de suspensões deste usuário será resetado para zero.',
+    btnLabel: 'Zerar',
+    btnColor: 'var(--accent)',
+    iconName: 'restart_alt',
+    onConfirm: async () => {
+      await db.ref('suspensions/' + uid).update({ count: 0, banned: false, history: [] });
+      toast('Suspensões zeradas');
+      renderSuspensionsList();
+    }
+  });
 }
-
 async function saDeleteReview(storeId, reviewId) {
   if (!confirm('Apagar esta avaliação?')) return;
   await db.ref('stores/' + storeId + '/reviews/' + reviewId).remove();
@@ -3167,8 +3258,20 @@ async function clearAllReviews() {
   const count = Object.values(storesData)
     .reduce((a, s) => a + Object.keys(s.reviews || {}).length, 0);
   if (!count) { toast('Nenhuma avaliação para remover'); return; }
-  if (!confirm(`Apagar todas as ${count} avaliações? Ação irreversível.`)) return;
-  const updates = {};
+  showConfirmModal({
+    title: 'Apagar todas as avaliações?',
+    desc: `${count} avaliações serão removidas permanentemente.`,
+    btnLabel: 'Apagar tudo',
+    btnColor: '#F59E0B',
+    iconName: 'star_border',
+    iconBg: 'var(--warn-bg)',
+    iconColor: 'var(--warn)',
+    onConfirm: async () => {
+      const updates = {};
+
+    }
+  });
+}
   Object.values(storesData).forEach(s => {
     if (s.reviews && Object.keys(s.reviews).length)
       updates['stores/' + s.id + '/reviews'] = null;
@@ -3183,29 +3286,53 @@ async function clearAllOrders() {
   const orders = snap.val() || {};
   const count = Object.keys(orders).length;
   if (!count) { toast('Nenhum pedido para remover'); return; }
-  if (!confirm(`Apagar TODOS os ${count} pedidos da plataforma? Isso afeta todos os usuários.`)) return;
-  await db.ref('orders').remove();
-  toast(`🗑️ ${count} pedidos removidos`);
+  showConfirmModal({
+    title: 'Apagar todos os pedidos?',
+    desc: `${count} pedidos serão removidos permanentemente de todos os usuários.`,
+    btnLabel: 'Apagar tudo',
+    btnColor: 'var(--accent)',
+    iconName: 'receipt_long',
+    onConfirm: async () => {
+      await db.ref('orders').remove();
+      toast(`🗑️ ${count} pedidos removidos`);
+    }
+  });
 }
 
 async function clearAllReports() {
   const snap = await db.ref('reports').once('value');
   const count = Object.keys(snap.val() || {}).length;
   if (!count) { toast('Nenhuma denúncia para remover'); return; }
-  if (!confirm(`Apagar todas as ${count} denúncias? Ação irreversível.`)) return;
-  await db.ref('reports').remove();
-  toast(`🗑️ ${count} denúncias removidas`);
-  loadSAReports();
+   showConfirmModal({
+    title: 'Apagar todas as denúncias?',
+    desc: `${count} denúncias serão removidas permanentemente.`,
+    btnLabel: 'Apagar tudo',
+    btnColor: 'var(--accent)',
+    iconName: 'flag',
+    onConfirm: async () => {
+      await db.ref('reports').remove();
+      toast(`🗑️ ${count} denúncias removidas`);
+      loadSAReports();
+    }
+  });
 }
 
 async function clearAllSupportConvs() {
   const snap = await db.ref('support').once('value');
   const count = Object.keys(snap.val() || {}).length;
   if (!count) { toast('Nenhuma conversa para remover'); return; }
-  if (!confirm(`Apagar TODAS as ${count} conversas de suporte? Isso afeta todos os usuários.`)) return;
-  await db.ref('support').remove();
-  toast(`🗑️ ${count} conversas apagadas`);
-  openSASupport();
+  showConfirmModal({
+    title: 'Apagar todas as conversas?',
+    desc: `${count} conversas serão removidas permanentemente para todos os usuários.`,
+    btnLabel: 'Apagar tudo',
+    btnColor: 'var(--accent)',
+    iconName: 'delete_sweep',
+    onConfirm: async () => {
+      await db.ref('support').remove();
+      toast(`🗑️ ${count} conversas apagadas`);
+      openSASupport();
+    }
+  });
 }
 
 // ══ PREVIEW DE IMAGENS ══
