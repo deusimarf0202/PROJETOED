@@ -28,12 +28,6 @@
 html{scroll-behavior:smooth}
 body{background:var(--bg);font-family:var(--font-body);color:var(--dark);overflow-x:hidden}
 
-.img-preview-wrap{margin-top:8px;border-radius:var(--r-sm);overflow:hidden;
-  border:1px solid var(--border);background:var(--bg);
-  display:none;aspect-ratio:16/9;max-height:180px}
-.img-preview-wrap img{width:100%;height:100%;object-fit:cover}
-.img-preview-wrap.visible{display:block}
-
 /* ══ STACK NAVIGATION SYSTEM ══ */
 .page{
   position:fixed;inset:0;
@@ -301,10 +295,6 @@ nav button .material-icons-round{font-size:22px}
 
 /* LOADER */
 .loader-wrap{display:flex;align-items:center;justify-content:center;padding:40px;gap:8px}
-/* SKELETON */
-@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
-.skeleton{background:linear-gradient(90deg,var(--border) 25%,rgba(0,0,0,0.04) 50%,var(--border) 75%);
-  background-size:600px 100%;animation:shimmer 1.4s infinite;border-radius:8px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:bounce 1s infinite}
 .dot:nth-child(2){animation-delay:.15s}
 .dot:nth-child(3){animation-delay:.3s}
@@ -546,27 +536,6 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 </head>
 <body>
 
-<!-- SPLASH SCREEN -->
-<div id="splash-screen" style="position:fixed;inset:0;z-index:99999;background:#131110;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
-  <div style="font-family:var(--font-display);font-size:52px;font-weight:800;
-    color:white;letter-spacing:-2px;line-height:1">
-    Delivra<em style="color:#FF3D2E;font-style:normal">Tech</em>
-  </div>
-  <div style="display:flex;gap:8px;margin-top:8px">
-    <div style="width:8px;height:8px;border-radius:50%;background:#FF3D2E;
-      animation:splashDot 1s infinite"></div>
-    <div style="width:8px;height:8px;border-radius:50%;background:#FF3D2E;
-      animation:splashDot 1s infinite .15s"></div>
-    <div style="width:8px;height:8px;border-radius:50%;background:#FF3D2E;
-      animation:splashDot 1s infinite .3s"></div>
-  </div>
-</div>
-<style>
-@keyframes splashDot{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-8px);opacity:1}}
-@keyframes splashFade{from{opacity:1}to{opacity:0;pointer-events:none}}
-</style>
-
 <!-- ONBOARDING -->
 <section id="onboarding" style="display:flex">
   <div class="ob-bg"></div>
@@ -657,22 +626,12 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
   <div class="scroll-pad"></div>
 </section>
 
-
 <!-- ORDERS PAGE -->
 <section id="orders" class="page">
   <div class="orders-page">
-    <div class="orders-hero" style="display:flex;flex-direction:column;align-items:flex-start">
+    <div class="orders-hero">
       <h2>Meus Pedidos</h2>
       <p>Acompanhe em tempo real</p>
-      <button id="clear-orders-btn" onclick="clearOrdersHistory()"
-        style="display:none;margin-top:14px;background:rgba(255,255,255,.08);
-        border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.65);
-        padding:8px 16px;border-radius:100px;font-size:12px;font-weight:600;
-        font-family:var(--font-body);cursor:pointer;align-items:center;gap:6px;
-        transition:all .2s">
-        <span class="material-icons-round" style="font-size:15px">delete_sweep</span>
-        Limpar histórico
-      </button>
     </div>
     <div id="orders-list" style="padding-top:4px">
       <div class="loader-wrap"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
@@ -686,20 +645,9 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
     <h2>Central de<br><em>Suporte</em></h2>
     <p>Fale conosco — respondemos rapidinho!</p>
     <div class="support-status-bar">
-  <span class="online-dot"></span>
-  <span>Suporte online</span>
-</div>
-<button id="clear-support-btn" onclick="clearSupportHistory()"
-  style="display:none;margin-top:14px;background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.5);
-  padding:7px 14px;border-radius:100px;font-size:12px;font-weight:600;
-  font-family:var(--font-body);cursor:pointer;
-  align-items:center;gap:6px;transition:all .2s;position:relative;z-index:1"
-  onmouseover="this.style.background='rgba(255,61,46,.2)'"
-  onmouseout="this.style.background='rgba(255,255,255,.07)'">
-  <span class="material-icons-round" style="font-size:15px">delete_sweep</span>
-  Apagar conversa
-</button>
+      <span class="online-dot"></span>
+      <span>Suporte online</span>
+    </div>
   </div>
   <div id="support-msgs-area" class="support-msgs-area">
     <div class="support-empty">
@@ -743,9 +691,6 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       </div>
       <div class="field-group"><label class="field-label">Nome da loja <span style="color:var(--accent)">*</span></label><input class="field-input" type="text" id="adm-store-name" placeholder="Ex: Burguer da Vila"></div>
       <div class="field-group"><label class="field-label">URL da Logo <span style="color:var(--muted);font-weight:400">(opcional)</span></label><input class="field-input" type="url" id="adm-store-logo" placeholder="https://…"></div>
-      <div class="img-preview-wrap" id="preview-logo">
-      <img id="preview-logo-img" src="" alt="Preview">
-    </div>
       <div class="field-group"><label class="field-label">Endereço <span style="color:var(--accent)">*</span></label><input class="field-input" type="text" id="adm-store-address" placeholder="Rua, número, cidade"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="field-group"><label class="field-label">País <span style="color:var(--accent)">*</span></label><input class="field-input" type="text" id="adm-country" placeholder="Brasil"></div>
@@ -767,7 +712,7 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
             <option value="Frutos do Mar">🦞 Frutos do Mar</option>
             <option value="Vegetariana">🥗 Vegetariana</option>
             <option value="Sobremesas">🍰 Sobremesas</option>
-
+            <option value="Bebidas">🥤 Bebidas</option>
             <option value="Padaria">🥐 Padaria</option>
             <option value="Outros">🍽️ Outros</option>
           </select>
@@ -791,9 +736,6 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="field-group"><label class="field-label">Preço (R$)</label><input class="field-input" type="number" id="p-price" placeholder="29.90" step="0.01" min="0"></div>
         <div class="field-group"><label class="field-label">Foto URL</label><input class="field-input" type="url" id="p-img" placeholder="https://…"></div>
-        <div class="img-preview-wrap" id="preview-pimg">
-      <img id="preview-pimg-img" src="" alt="Preview">
-    </div>
       </div>
       <div class="field-group"><label class="field-label">Descrição breve</label><input class="field-input" type="text" id="p-desc" placeholder="Ingredientes principais…"></div>
       <button class="btn-primary" onclick="addProduct()">
@@ -1040,7 +982,7 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
   <span id="toast-msg"></span>
 </div>
 
-<script type="module">
+<script>
 // ══════════════════════════════════════════════
 //  FIREBASE CONFIG
 // ══════════════════════════════════════════════
@@ -1061,13 +1003,6 @@ const auth = firebase.auth();
 //  EMAIL ESPECIAL DE ADMINISTRADOR
 // ══════════════════════════════════════════════
 const ADMIN_EMAIL = 'deusimarfirme600@gmail.com';
-function hideSplash() {
-  const s = document.getElementById('splash-screen');
-  if (!s || s._hidden) return;
-  s._hidden = true;
-  s.style.animation = 'splashFade .5s ease forwards';
-  setTimeout(() => { if (s.parentNode) s.remove(); }, 500);
-}
 const VERIFIED_EMAIL = ADMIN_EMAIL;
 
 function isAdminUser() {
@@ -1190,22 +1125,11 @@ auth.onAuthStateChanged(firebaseUser => {
 // ══════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════
-
-  
-let supportListenerRef = null;
-let supportListenerConvId = null;
-
 let storesData = {};
 let currentStoreId = null;
-let userProfile = JSON.parse(localStorage.getItem('dt_user') || 'null');
-let cart = (() => {
-  try {
-    const uid = userProfile ? userProfile.id : null;
-    const key = uid ? 'dt_cart_' + uid : 'dt_cart';
-    return JSON.parse(localStorage.getItem(key) || '{}');
-  } catch(e) { return {}; }
-})();
+let cart = {};
 let deliveryType = 'delivery';
+let userProfile = JSON.parse(localStorage.getItem('dt_user') || 'null');
 let activeFilter = 'all';
 let userLat = null, userLng = null;
 let myStoreOrders = {};
@@ -1220,7 +1144,7 @@ let currentSupportConvId = null;
 db.ref('stores').on('value', snap => {
   storesData = snap.val() || {};
   renderHome();
-  hideSplash();
+  checkLocalStoreStatus();
   if (currentStoreId && storesData[currentStoreId]) renderMenu(currentStoreId);
   if (userProfile?.role === 'owner' && userProfile.storeId) listenIncomingOrders(userProfile.storeId);
   if (pageStack.includes('sa-admin-page')) renderSuperAdminStores();
@@ -1320,7 +1244,7 @@ function setupOrdersListener() {
     const orders = snap.val() || {};
     const hasActive = Object.values(orders).some(o => o.status && o.status !== 'delivered');
     document.getElementById('orders-notif').style.display = hasActive ? 'block' : 'none';
-    if (pageStack[pageStack.length - 1] === 'orders') renderOrdersList(orders);
+    if (document.getElementById('orders').classList.contains('active')) renderOrdersList(orders);
   });
 }
 
@@ -1329,12 +1253,8 @@ function setupOrdersListener() {
 // ══════════════════════════════════════════════
 function setupSupportListener() {
   if (!userProfile) return;
-  if (supportListenerRef && supportListenerConvId) {
-    db.ref('support/' + supportListenerConvId + '/messages').off('value', supportListenerRef);
-  }
   const convId = 'conv_' + userProfile.id;
-  supportListenerConvId = convId;
-  supportListenerRef = db.ref('support/' + convId + '/messages').on('value', snap => {
+  db.ref('support/' + convId + '/messages').on('value', snap => {
     const msgs = snap.val() || {};
     const hasUnread = Object.values(msgs).some(m => m.from === 'support' && !m.readByUser);
     document.getElementById('support-notif').style.display = hasUnread ? 'block' : 'none';
@@ -1361,8 +1281,6 @@ function renderSupportMessages(msgs) {
       <span class="material-icons-round">chat_bubble_outline</span>
       <p>Envie sua primeira mensagem e nossa equipe responderá em breve.</p>
     </div>`;
-    const btn = document.getElementById('clear-support-btn');
-    if (btn) btn.style.display = 'none';
     return;
   }
   const myPhotoURL = userProfile?.photoURL || null;
@@ -1409,10 +1327,6 @@ function renderSupportMessages(msgs) {
   });
   document.getElementById('support-notif').style.display = 'none';
   setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
-  const clearBtn = document.getElementById('clear-support-btn');
-  if (clearBtn) clearBtn.style.display = 'inline-flex';
-
-  setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
 }
 
 async function sendSupportMessage() {
@@ -1422,7 +1336,6 @@ async function sendSupportMessage() {
   if (!text) return;
   ta.value = '';
   ta.style.height = 'auto';
-  ta.style.height = '24px';
   const convId = 'conv_' + userProfile.id;
   const ref = db.ref('support/' + convId + '/messages').push();
   const msg = {
@@ -1457,7 +1370,7 @@ function tryGetLocation() {
     userLng = pos.coords.longitude;
     document.getElementById('hero-sub').textContent = '📍 Restaurantes perto de você';
     renderHome();
-  }, () => {}, { timeout: 8000, maximumAge: 300000 });    
+  }, () => {}, { timeout: 8000, maximumAge: 300000 });
 }
 
 function isOpenNow(openTime, closeTime) {
@@ -1500,11 +1413,10 @@ function pushPage(id) {
     next.classList.remove('push-in'); next.classList.add('active');
     if (prev) { prev.classList.remove('push-under'); prev.style.display = 'none'; }
   }, { once: true });
-  updateNavBar(id);  
+  updateNavBar(id);
   if (id === 'orders') renderOrdersPage();
   if (id === 'cart-page') renderCartPage();
   if (id === 'support-page') setupSupportOnOpen();
-  if (id === 'admin') checkLocalStoreStatus();
 }
 
 function popPage() {
@@ -1575,19 +1487,13 @@ function tabTo(id) {
   if (id === 'orders') renderOrdersPage();
   if (id === 'cart-page') renderCartPage();
   if (id === 'support-page') setupSupportOnOpen();
-  if (id === 'admin') checkLocalStoreStatus();
 }
 
 function setupSupportOnOpen() {
   if (!userProfile) return;
   const convId = 'conv_' + userProfile.id;
   db.ref('support/' + convId + '/messages').once('value', snap => {
-    const msgs = snap.val() || {};
-    renderSupportMessages(msgs);
-    const clearBtn = document.getElementById('clear-support-btn');
-    if (clearBtn) {
-      clearBtn.style.display = Object.keys(msgs).length > 0 ? 'inline-flex' : 'none';
-    }
+    renderSupportMessages(snap.val() || {});
   });
 }
 
@@ -1607,30 +1513,6 @@ function setFilter(f, el) {
   renderHome();
 }
 
-function showSkeletonStores() {
-  const list = document.getElementById('store-list');
-  if (!list) return;
-  list.innerHTML = [1,2,3].map(() => `
-    <div style="background:var(--surface);border-radius:var(--r-md);overflow:hidden;
-      border:.5px solid var(--border)">
-      <div class="skeleton" style="height:140px;border-radius:0"></div>
-      <div style="padding:14px 16px">
-        <div style="display:flex;gap:12px;margin-bottom:12px">
-          <div class="skeleton" style="width:44px;height:44px;border-radius:10px;flex-shrink:0"></div>
-          <div style="flex:1">
-            <div class="skeleton" style="height:16px;width:60%;margin-bottom:8px"></div>
-            <div class="skeleton" style="height:12px;width:40%"></div>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <div class="skeleton" style="height:22px;width:80px;border-radius:100px"></div>
-          <div class="skeleton" style="height:22px;width:60px;border-radius:100px"></div>
-          <div class="skeleton" style="height:22px;width:70px;border-radius:100px"></div>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
 function renderHome() {
   const list = document.getElementById('store-list');
   const q = document.getElementById('main-search')?.value.toLowerCase().trim() || '';
@@ -1655,7 +1537,7 @@ function renderHome() {
     const hoursLine = (s.openTime && s.closeTime) ? `<span class="meta-chip" style="color:${nowOpen ? 'var(--success)' : 'var(--accent)'}"><span class="material-icons-round" style="font-size:14px">schedule</span>${nowOpen ? 'Aberto agora' : 'Fechado'} · ${s.openTime}–${s.closeTime}</span>` : '';
     const feeLine = s.type !== 'restaurant' ? `<span class="meta-chip"><span class="material-icons-round">directions_bike</span>${s.deliveryFee > 0 ? 'Taxa R$ ' + parseFloat(s.deliveryFee).toFixed(2) : 'Grátis'}</span>` : '';
     const catLine = s.category ? `<span class="tag-pill" style="background:#F0F4FF;color:#4F6EF7;font-size:11px">${esc(s.category)}</span>` : '';
-    return `<div class="store-card" onclick="openMenu('${escAttr(s.id)}')">
+    return `<div class="store-card" onclick="openMenu('${s.id}')">
       <img src="${s.logo || ''}" class="store-card-img" onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80'" alt="">
       ${saSessionActive ? `<button class="card-del-btn" onclick="event.stopPropagation();homeDeleteStore('${s.id}','${esc(s.name)}')" title="Remover"><span class="material-icons-round">delete_forever</span></button>` : ''}
       <div class="store-card-body">
@@ -1748,8 +1630,6 @@ function updateCartBadge() {
   const badge = document.getElementById('cart-count');
   badge.textContent = total;
   badge.style.display = total > 0 ? 'flex' : 'none';
-  const cartKey = userProfile ? 'dt_cart_' + userProfile.id : 'dt_cart';
-  localStorage.setItem(cartKey, JSON.stringify(cart));
   if (pageStack.includes('cart-page')) renderCartPage();
 }
 
@@ -1857,12 +1737,7 @@ async function placeOrder() {
   const storeId = items[0].storeId; const total = items.reduce((a, i) => a + i.price * i.qty, 0);
   const order = { id: '', storeId, storeName: items[0].storeName, customerId: userProfile.id, customerName: userProfile.name, items: items.map(i => ({ name: i.name, price: i.price, qty: i.qty })), total, address, note, deliveryType, status: 'pending', createdAt: Date.now() };
   const ref = db.ref('orders').push(); order.id = ref.key; await ref.set(order);
-  cart = {};
-  localStorage.removeItem('dt_cart');
-  updateCartBadge();
-  closeOrderForm();
-  toast('🎉 Pedido realizado com sucesso!');
-  tabTo('orders');
+  cart = {}; updateCartBadge(); closeOrderForm(); toast('🎉 Pedido realizado com sucesso!'); tabTo('orders');
 }
 
 // ══════════════════════════════════════════════
@@ -1910,16 +1785,11 @@ function renderOrdersList(orders) {
       <div class="order-total-row"><span>Total</span><strong>R$ ${o.total.toFixed(2)}</strong></div>
       <div class="order-track-bar"><p style="font-size:12px;color:var(--muted);margin-bottom:12px">Rastreamento</p><div class="track-steps">${trackHtml}</div></div>
       ${isDone ? `<div class="order-actions">
-        <button class="order-rate-btn" onclick="openReviewFromOrder('${escAttr(o.storeId)}','${escAttr(o.storeName)}')"><span class="material-icons-round">star</span>Avaliar</button>
-        <button class="order-reorder-btn" onclick="tabTo('home');setTimeout(()=>openMenu('${escAttr(o.storeId)}'),350)">
+        <button class="order-rate-btn" onclick="openReviewFromOrder('${o.storeId}','${esc(o.storeName)}')"><span class="material-icons-round">star</span>Avaliar</button>
+        <button class="order-reorder-btn" onclick="tabTo('home');setTimeout(()=>openMenu('${o.storeId}'),350)"><span class="material-icons-round">replay</span>Pedir novamente</button>
       </div>` : ''}
     </div>`;
   }).join('');
-  const btn = document.getElementById('clear-orders-btn');
-  if (btn) {
-    const hasDelivered = arr.some(o => o.status === 'delivered');
-    btn.style.display = hasDelivered ? 'inline-flex' : 'none';
-  }
 }
 
 // ══════════════════════════════════════════════
@@ -2135,20 +2005,8 @@ function changeNameModal() {
 
 function logout() {
   if (!confirm('Sair da conta?')) return;
-  if (banWatcherRef && userProfile) {
-    db.ref('suspensions/' + userProfile.id).off('value', banWatcherRef);
-    banWatcherRef = null;
-  }
-  if (supportListenerRef && supportListenerConvId) {
-    db.ref('support/' + supportListenerConvId + '/messages').off('value', supportListenerRef);
-    supportListenerRef = null;
-    supportListenerConvId = null;
-  }
   if (userProfile?.googleAuth) auth.signOut().catch(() => {});
-  localStorage.removeItem('dt_user');
-  localStorage.removeItem('my_store_id');
-  if (userProfile) localStorage.removeItem('dt_cart_' + userProfile.id);
-  localStorage.removeItem('dt_cart');
+  localStorage.removeItem('dt_user'); localStorage.removeItem('my_store_id');
   userProfile = null; pageStack = [];
   document.querySelectorAll('.page').forEach(p => { p.classList.remove('active', 'push-in', 'pop-out', 'push-under', 'pop-restore'); p.style.display = 'none'; });
   document.getElementById('main-nav').style.display = 'none';
@@ -2162,9 +2020,6 @@ function logout() {
 //  HELPERS
 // ══════════════════════════════════════════════
 function esc(str) { const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML; }
-function escAttr(str) {
-  return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
-}
 let toastTimer;
 function toast(msg, type = 'success') {
   const el = document.getElementById('toast');
@@ -2180,7 +2035,6 @@ function toast(msg, type = 'success') {
 //  INIT
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-  showSkeletonStores();
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
   if (userProfile) {
     document.getElementById('onboarding').style.display = 'none';
@@ -2430,7 +2284,23 @@ function restoreFromBan() {
   toast('✅ Acesso restaurado!');
 }
 
+async function liftBan(ownerId) {
+  if (!confirm('Levantar o banimento deste usuário?')) return;
 
+  // Zera completamente no Firebase
+  await db.ref('suspensions/' + ownerId).set({
+    banned: false,
+    count: 0,
+    history: [],
+    ownerName: (await db.ref('suspensions/' + ownerId + '/ownerName').once('value')).val() || 'Usuário'
+  });
+
+  toast('Banimento levantado');
+  renderSuspensionsList();
+
+  // Se o usuário banido É o usuário atual, o listener do startBanWatcher
+  // vai detectar a mudança automaticamente e chamar restoreFromBan()
+}
 
 
 function showBannedScreen(data) {
@@ -2467,33 +2337,29 @@ function showBannedScreen(data) {
 
 function trapBannedKeyboard(e) { if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) e.preventDefault(); }
 
-
+async function liftBan(ownerId) {
+  if (!confirm('Levantar o banimento deste usuário?')) return;
+  const nameSnap = await db.ref('suspensions/' + ownerId + '/ownerName').once('value');
+  await db.ref('suspensions/' + ownerId).set({
+    banned: false,
+    count: 0,
+    history: [],
+    ownerName: nameSnap.val() || 'Usuário'
+  });
+  toast('Banimento levantado');
+  renderSuspensionsList();
+}
 
 async function liftBan(ownerId) {
-  showConfirmModal({
-    title: 'Levantar banimento?',
-    desc: 'O usuário recuperará acesso total à plataforma.',
-    btnLabel: 'Desbanir',
-    btnColor: 'var(--success)',
-    iconName: 'lock_open',
-    iconBg: 'var(--success-bg)',
-    iconColor: 'var(--success)',
-    onConfirm: async () => {
-      await db.ref('suspensions/' + ownerId).update({ banned: false, count: 0, history: [] });
-      toast('Banimento levantado'); renderSuspensionsList();
-      if (userProfile && userProfile.id === ownerId) {
-        userProfile.banned = false; userProfile.suspensions = 0;
-        localStorage.setItem('dt_user', JSON.stringify(userProfile));
-        const bs = document.getElementById('banned-screen');
-        bs.classList.remove('visible'); bs.style.display = 'none';
-        document.querySelectorAll('.ob-btn,.ob-btn-google').forEach(btn => {
-          btn.disabled = false; btn.style.pointerEvents = ''; btn.style.opacity = '';
-        });
-        document.removeEventListener('keydown', trapBannedKeyboard, true);
-        applyProfile();
-      }
-    }
-  });
+  if (!confirm('Levantar o banimento deste usuário?')) return;
+  await db.ref('suspensions/' + ownerId).update({ banned: false, count: 0, history: [] });
+  toast('Banimento levantado'); renderSuspensionsList();
+  if (userProfile && userProfile.id === ownerId) {
+    userProfile.banned = false; userProfile.suspensions = 0; localStorage.setItem('dt_user', JSON.stringify(userProfile));
+    const bs = document.getElementById('banned-screen'); bs.classList.remove('visible'); bs.style.display = 'none';
+    document.querySelectorAll('.ob-btn,.ob-btn-google').forEach(btn => { btn.disabled = false; btn.style.pointerEvents = ''; btn.style.opacity = ''; });
+    document.removeEventListener('keydown', trapBannedKeyboard, true); applyProfile();
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -2602,10 +2468,6 @@ function renderSAPanel() {
 }
 
 function openSAStores() {
-  if (saConvListener) {
-    db.ref('support').off('value', saConvListener);
-    saConvListener = null;
-  }
   saCurrentPanel = 'stores';
   const body = document.getElementById('sa-body-content');
   const saTitle = document.getElementById('sa-panel-title');
@@ -2621,28 +2483,12 @@ function openSAStores() {
     <div id="sa-store-list"></div>
     <div class="sa-section-label" style="margin-top:8px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05)">Suspensões &amp; Banimentos</div>
     <div id="sa-suspensions-list" style="padding:0 24px"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0;text-align:center">Carregando…</p></div>
-    <div style="padding:12px 24px 16px">
-  <button onclick="clearAllReviews()" style="width:100%;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:#F59E0B;padding:11px;border-radius:10px;font-size:13px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:10px">
-    <span class="material-icons-round" style="font-size:15px">star_border</span> Apagar todas as avaliações
-  </button>
-  <button onclick="clearAllOrders()" style="width:100%;background:rgba(255,61,46,.06);border:1px solid rgba(255,61,46,.18);color:var(--accent);padding:11px;border-radius:10px;font-size:13px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-    <span class="material-icons-round" style="font-size:15px">receipt_long</span> Apagar todos os pedidos
-  </button>
-</div>
   `;
   renderSuperAdminStores(); renderSuspensionsList();
 }
 
 function openSASupport() {
   if (saConvListener) { db.ref('support').off('value', saConvListener); saConvListener = null; }
-  // Atualiza stats no header
-  const statsEl = document.getElementById('sa-stats');
-  if (statsEl) {
-    const stores = Object.values(storesData);
-    const totalProds = stores.reduce((a,s)=>a+Object.keys(s.products||{}).length,0);
-    const totalRevs = stores.reduce((a,s)=>a+Object.keys(s.reviews||{}).length,0);
-    statsEl.innerHTML = `<div class="sa-stat"><div class="sa-stat-num">${stores.length}</div><div class="sa-stat-label">Lojas</div></div><div class="sa-stat"><div class="sa-stat-num">${totalProds}</div><div class="sa-stat-label">Pratos</div></div><div class="sa-stat"><div class="sa-stat-num">${totalRevs}</div><div class="sa-stat-label">Reviews</div></div>`;
-  }
   if (saChatMsgListener && saActiveChatConvId) { db.ref('support/' + saActiveChatConvId + '/messages').off('value', saChatMsgListener); saChatMsgListener = null; saActiveChatConvId = null; }
   saCurrentPanel = 'support';
   const body = document.getElementById('sa-body-content');
@@ -2656,11 +2502,6 @@ function openSASupport() {
       <span id="sa-pending-count" style="font-size:11px;color:rgba(255,255,255,.3)"></span>
     </div>
     <div class="sa-conversations" id="sa-conv-list"><p style="font-size:13px;color:rgba(255,255,255,.3);text-align:center;padding:24px">Carregando conversas…</p></div>
-    <div style="padding:8px 16px 12px;border-top:1px solid rgba(255,255,255,.06)">
-      <button onclick="clearAllSupportConvs()" style="width:100%;background:rgba(255,61,46,.06);border:1px solid rgba(255,61,46,.2);color:#FF6B6B;padding:10px;border-radius:10px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-        <span class="material-icons-round" style="font-size:14px">delete_sweep</span> Apagar todas as conversas
-      </button>
-    </div>
   </div>`;
   loadSAConversations();
 }
@@ -2668,19 +2509,14 @@ function openSASupport() {
 function loadSAConversations() {
   saConvListener = function(snap) {
     const data = snap.val() || {};
-    const list = document.getElementById('sa-conv-list');
-    if (!list) return;
-
-    // Filtra apenas conversas válidas (que têm 'meta')
-    const convs = Object.values(data)
-      .filter(c => c && c.meta)  // ← ESTA É A CORREÇÃO PRINCIPAL
-      .sort((a, b) => {
-        const aUnread = a.meta?.hasUnread ? 1 : 0;
-        const bUnread = b.meta?.hasUnread ? 1 : 0;
-        if (bUnread !== aUnread) return bUnread - aUnread;
-        return (b.meta?.at || 0) - (a.meta?.at || 0);
-      });
-
+    const list = document.getElementById('sa-conv-list'); if (!list) return;
+    // ✅ Pendentes (hasUnread=true) vêm primeiro, depois por data
+    const convs = Object.values(data).sort((a, b) => {
+      const aUnread = a.meta?.hasUnread ? 1 : 0;
+      const bUnread = b.meta?.hasUnread ? 1 : 0;
+      if (bUnread !== aUnread) return bUnread - aUnread; // pendentes primeiro
+      return (b.meta?.at || 0) - (a.meta?.at || 0);
+    });
     const pendingCount = convs.filter(c => c.meta?.hasUnread).length;
     const countEl = document.getElementById('sa-pending-count');
     if (countEl) countEl.textContent = pendingCount > 0 ? `${pendingCount} pendente${pendingCount !== 1 ? 's' : ''}` : '';
@@ -2689,7 +2525,6 @@ function loadSAConversations() {
       list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.3)"><span class="material-icons-round" style="font-size:40px;display:block;margin-bottom:8px;opacity:.3">inbox</span>Nenhuma conversa ainda</div>`;
       return;
     }
-
     list.innerHTML = convs.map(conv => {
       const meta = conv.meta || {};
       const unread = meta.hasUnread;
@@ -2894,26 +2729,18 @@ function renderSuperAdminStores() {
 }
 
 async function superAdminDeleteStore(id, name) {
-  showConfirmModal({
-    title: 'Excluir restaurante?',
-    desc: `"${name}" será removido permanentemente. Esta ação é irreversível.`,
-    btnLabel: 'Excluir',
-    btnColor: 'var(--accent)',
-    iconName: 'delete_forever',
-    onConfirm: async () => {
-      const storeSnap = await db.ref('stores/' + id).once('value');
-      const storeData = storeSnap.val();
-      const ownerId = storeData?.ownerId || null;
-      const ownerName = storeData?.ownerName || 'Desconhecido';
-      const row = document.getElementById('sa-row-' + id);
-      if (row) { row.style.transition='all .3s'; row.style.opacity='0'; row.style.transform='translateX(40px)'; }
-      setTimeout(async () => {
-        await db.ref('stores/' + id).remove();
-        if (ownerId) { await issueSuspension(ownerId, ownerName, name); await sendStoreDeletedNotification(ownerId, ownerName, name); }
-        toast('Restaurante removido'); renderSuperAdminStores(); renderHome();
-      }, 300);
-    }
-  });
+  const confirmed = confirm(`⚠️ AÇÃO IRREVERSÍVEL\n\nExcluir permanentemente:\n"${name}"\n\nConfirmar?`);
+  if (!confirmed) return;
+  const storeSnap = await db.ref('stores/' + id).once('value');
+  const storeData = storeSnap.val();
+  const ownerId = storeData?.ownerId || null; const ownerName = storeData?.ownerName || 'Desconhecido';
+  const row = document.getElementById('sa-row-' + id);
+  if (row) { row.style.transition = 'all .3s'; row.style.opacity = '0'; row.style.transform = 'translateX(40px)'; }
+  setTimeout(async () => {
+    await db.ref('stores/' + id).remove();
+    if (ownerId) { await issueSuspension(ownerId, ownerName, name); await sendStoreDeletedNotification(ownerId, ownerName, name); }
+    toast('Restaurante removido'); renderSuperAdminStores(); renderHome();
+  }, 300);
 }
 
 function saPasswordKeydown(e) { if (e.key === 'Enter') checkSuperAdminPassword(); if (e.key === 'Escape') closeSuperAdminLogin(); }
@@ -2974,31 +2801,13 @@ function injectReportBtn(storeId, storeName) {
 
 // ── Aba Denúncias no Super Admin ──
 function openSAReports() {
-  if (saConvListener) {
-    db.ref('support').off('value', saConvListener);
-    saConvListener = null;
-  }
   saCurrentPanel = 'reports';
-  // Atualiza stats no header
-  const statsEl = document.getElementById('sa-stats');
-  if (statsEl) {
-    const stores = Object.values(storesData);
-    const totalProds = stores.reduce((a,s)=>a+Object.keys(s.products||{}).length,0);
-    const totalRevs = stores.reduce((a,s)=>a+Object.keys(s.reviews||{}).length,0);
-    statsEl.innerHTML = `<div class="sa-stat"><div class="sa-stat-num">${stores.length}</div><div class="sa-stat-label">Lojas</div></div><div class="sa-stat"><div class="sa-stat-num">${totalProds}</div><div class="sa-stat-label">Pratos</div></div><div class="sa-stat"><div class="sa-stat-num">${totalRevs}</div><div class="sa-stat-label">Reviews</div></div>`;
-  }
   const saTitle = document.getElementById('sa-panel-title');
   const saBackBtn = document.getElementById('sa-back-btn');
   if (saTitle) saTitle.textContent = 'Denúncias';
   if (saBackBtn) saBackBtn.style.display = 'flex';
   const body = document.getElementById('sa-body-content');
-  body.innerHTML = `
-    <div style="padding:12px 24px 4px;border-bottom:1px solid rgba(255,255,255,.06)">
-      <button onclick="clearAllReports()" style="width:100%;background:rgba(255,61,46,.06);border:1px solid rgba(255,61,46,.18);color:var(--accent);padding:11px;border-radius:10px;font-size:13px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px">
-        <span class="material-icons-round" style="font-size:15px">delete_sweep</span> Apagar todas as denúncias
-      </button>
-    </div>
-    <div id="sa-reports-list" style="padding-bottom:24px"><p style="font-size:13px;color:rgba(255,255,255,.3);text-align:center;padding:32px">Carregando denúncias…</p></div>`;
+  body.innerHTML = `<div id="sa-reports-list" style="padding-bottom:24px"><p style="font-size:13px;color:rgba(255,255,255,.3);text-align:center;padding:32px">Carregando denúncias…</p></div>`;
   loadSAReports();
 }
 
@@ -3009,14 +2818,11 @@ async function saDeleteReport(reportId) {
   loadSAReports();
 }
 async function loadSAReports() {
-  await new Promise(r => setTimeout(r, 50));
   const snap = await db.ref('reports').once('value');
   const data = snap.val() || {};
   const el = document.getElementById('sa-reports-list');
   if (!el) return;
   const reports = Object.values(data).sort((a, b) => b.createdAt - a.createdAt);
-
-  
   if (!reports.length) {
     el.innerHTML = `<div style="text-align:center;padding:48px 20px;color:rgba(255,255,255,.3)"><span class="material-icons-round" style="font-size:48px;display:block;margin-bottom:12px;opacity:.3">flag</span>Nenhuma denúncia ainda</div>`;
     return;
@@ -3114,19 +2920,12 @@ async function renderSuspensionsList() {
 }
 
 async function resetSuspensions(uid) {
-  showConfirmModal({
-    title: 'Zerar suspensões?',
-    desc: 'O contador de suspensões deste usuário será resetado para zero.',
-    btnLabel: 'Zerar',
-    btnColor: 'var(--accent)',
-    iconName: 'restart_alt',
-    onConfirm: async () => {
-      await db.ref('suspensions/' + uid).update({ count: 0, banned: false, history: [] });
-      toast('Suspensões zeradas');
-      renderSuspensionsList();
-    }
-  });
+  if (!confirm('Zerar as suspensões deste usuário?')) return;
+  await db.ref('suspensions/' + uid).update({ count: 0, banned: false, history: [] });
+  toast('Suspensões zeradas');
+  renderSuspensionsList();
 }
+
 async function saDeleteReview(storeId, reviewId) {
   if (!confirm('Apagar esta avaliação?')) return;
   await db.ref('stores/' + storeId + '/reviews/' + reviewId).remove();
@@ -3172,193 +2971,6 @@ async function submitReportReply(reportId) {
   toast('Resposta enviada ao usuário!');
   loadSAReports();
 }
-// ══════════════════════════════════════════════
-//  MODAL DE CONFIRMAÇÃO (substitui confirm() nativo)
-// ══════════════════════════════════════════════
-let _confirmCallback = null;
-
-function showConfirmModal({ title, desc, btnLabel = 'Confirmar', btnColor = 'var(--accent)', iconName = 'delete_sweep', iconBg = 'var(--accent-light)', iconColor = 'var(--accent)', onConfirm }) {
-  document.getElementById('confirm-modal-title').textContent = title;
-  document.getElementById('confirm-modal-desc').textContent = desc;
-  const btn = document.getElementById('confirm-modal-btn');
-  btn.textContent = btnLabel;
-  btn.style.background = btnColor;
-  const icon = document.getElementById('confirm-modal-icon');
-  icon.style.background = iconBg;
-  icon.querySelector('.material-icons-round').textContent = iconName;
-  icon.querySelector('.material-icons-round').style.color = iconColor;
-  _confirmCallback = onConfirm;
-  const modal = document.getElementById('confirm-modal');
-  modal.style.display = 'flex';
-}
-
-function closeConfirmModal() {
-  document.getElementById('confirm-modal').style.display = 'none';
-  _confirmCallback = null;
-}
-
-document.getElementById('confirm-modal-btn').addEventListener('click', () => {
-  closeConfirmModal();
-  if (_confirmCallback) _confirmCallback();
-});
-
-// ══════════════════════════════════════════════
-//  APAGAR HISTÓRICO DE PEDIDOS
-// ══════════════════════════════════════════════
-function clearOrdersHistory() {
-  showConfirmModal({
-    title: 'Limpar histórico?',
-    desc: 'Todos os seus pedidos entregues serão removidos. Pedidos ativos não serão afetados.',
-    btnLabel: 'Limpar',
-    btnColor: 'var(--accent)',
-    iconName: 'delete_sweep',
-    onConfirm: async () => {
-      const snap = await db.ref('orders')
-        .orderByChild('customerId')
-        .equalTo(userProfile.id)
-        .once('value');
-      const orders = snap.val() || {};
-      const toDelete = Object.entries(orders)
-        .filter(([, o]) => o.status === 'delivered');
-      if (!toDelete.length) { toast('Nenhum pedido entregue para remover'); return; }
-      const updates = {};
-      toDelete.forEach(([id]) => { updates['orders/' + id] = null; });
-      await db.ref().update(updates);
-      toast(`🗑️ ${toDelete.length} pedido${toDelete.length !== 1 ? 's' : ''} removido${toDelete.length !== 1 ? 's' : ''}!`);
-      renderOrdersPage();
-    }
-  });
-}
-
-
-// ══════════════════════════════════════════════
-//  APAGAR HISTÓRICO DE SUPORTE
-// ══════════════════════════════════════════════
-function clearSupportHistory() {
-  showConfirmModal({
-    title: 'Apagar conversa?',
-    desc: 'Todas as mensagens desta conversa serão removidas permanentemente. O suporte não verá mais o histórico.',
-    btnLabel: 'Apagar tudo',
-    btnColor: '#2563EB',
-    iconName: 'chat_bubble_outline',
-    iconBg: 'var(--info-bg)',
-    iconColor: 'var(--info)',
-    onConfirm: async () => {
-      const convId = 'conv_' + userProfile.id;
-      await db.ref('support/' + convId).remove();
-      toast('💬 Conversa apagada!');
-      renderSupportMessages({});
-    }
-  });
-}
-
-async function clearAllReviews() {
-  const count = Object.values(storesData)
-    .reduce((a, s) => a + Object.keys(s.reviews || {}).length, 0);
-
-  if (!count) { 
-    toast('Nenhuma avaliação para remover'); 
-    return; 
-  }
-
-  showConfirmModal({
-    title: 'Apagar todas as avaliações?',
-    desc: `${count} avaliações serão removidas permanentemente.`,
-    btnLabel: 'Apagar tudo',
-    btnColor: '#F59E0B',
-    iconName: 'star_border',
-    iconBg: 'var(--warn-bg)',
-    iconColor: 'var(--warn)',
-
-    onConfirm: async () => {
-      const updates = {};
-
-      Object.values(storesData).forEach(s => {
-        if (s.reviews && Object.keys(s.reviews).length) {
-          updates['stores/' + s.id + '/reviews'] = null;
-        }
-      });
-
-      await db.ref().update(updates);
-
-      toast(`🗑️ ${count} avaliações removidas`);
-      renderSuperAdminStores();
-    }
-  });
-}
-
-async function clearAllOrders() {
-  const snap = await db.ref('orders').once('value');
-  const orders = snap.val() || {};
-  const count = Object.keys(orders).length;
-  if (!count) { toast('Nenhum pedido para remover'); return; }
-  showConfirmModal({
-    title: 'Apagar todos os pedidos?',
-    desc: `${count} pedidos serão removidos permanentemente de todos os usuários.`,
-    btnLabel: 'Apagar tudo',
-    btnColor: 'var(--accent)',
-    iconName: 'receipt_long',
-    onConfirm: async () => {
-      await db.ref('orders').remove();
-      toast(`🗑️ ${count} pedidos removidos`);
-    }
-  });
-}
-
-async function clearAllReports() {
-  const snap = await db.ref('reports').once('value');
-  const count = Object.keys(snap.val() || {}).length;
-  if (!count) { toast('Nenhuma denúncia para remover'); return; }
-   showConfirmModal({
-    title: 'Apagar todas as denúncias?',
-    desc: `${count} denúncias serão removidas permanentemente.`,
-    btnLabel: 'Apagar tudo',
-    btnColor: 'var(--accent)',
-    iconName: 'flag',
-    onConfirm: async () => {
-      await db.ref('reports').remove();
-      toast(`🗑️ ${count} denúncias removidas`);
-      loadSAReports();
-    }
-  });
-}
-
-async function clearAllSupportConvs() {
-  const snap = await db.ref('support').once('value');
-  const count = Object.keys(snap.val() || {}).length;
-  if (!count) { toast('Nenhuma conversa para remover'); return; }
-  showConfirmModal({
-    title: 'Apagar todas as conversas?',
-    desc: `${count} conversas serão removidas permanentemente para todos os usuários.`,
-    btnLabel: 'Apagar tudo',
-    btnColor: 'var(--accent)',
-    iconName: 'delete_sweep',
-    onConfirm: async () => {
-      await db.ref('support').remove();
-      toast(`🗑️ ${count} conversas apagadas`);
-      openSASupport();
-    }
-  });
-}
-
-// ══ PREVIEW DE IMAGENS ══
-document.addEventListener('DOMContentLoaded', () => {
-  function bindImgPreview(inputId, wrapId, imgId) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    input.addEventListener('input', () => {
-      const url = input.value.trim();
-      const wrap = document.getElementById(wrapId);
-      const img  = document.getElementById(imgId);
-      if (!url) { wrap.classList.remove('visible'); return; }
-      img.src = url;
-      img.onload  = () => wrap.classList.add('visible');
-      img.onerror = () => wrap.classList.remove('visible');
-    });
-  }
-  bindImgPreview('adm-store-logo', 'preview-logo',  'preview-logo-img');
-  bindImgPreview('p-img',          'preview-pimg',  'preview-pimg-img');
-});
 </script>
 
 
@@ -3512,45 +3124,5 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </section>
 
-  <!-- CONFIRM MODAL -->
-  <div id="confirm-modal" style="display:none;position:fixed;inset:0;z-index:9990;
-  flex-direction:column;justify-content:flex-end">
-  <div id="confirm-modal-bg" onclick="closeConfirmModal()"
-    style="position:absolute;inset:0;background:rgba(0,0,0,.5);
-    backdrop-filter:blur(4px)"></div>
-  <div style="position:relative;background:var(--surface);
-    border-radius:var(--r-xl) var(--r-xl) 0 0;
-    padding:28px 24px calc(28px + env(safe-area-inset-bottom,0px));
-    animation:slideUp .3s cubic-bezier(.22,1,.36,1)">
-    <div style="width:40px;height:4px;background:var(--border);
-      border-radius:4px;margin:0 auto 20px"></div>
-    <div id="confirm-modal-icon" style="width:52px;height:52px;border-radius:16px;
-      background:var(--accent-light);display:flex;align-items:center;
-      justify-content:center;margin-bottom:14px">
-      <span class="material-icons-round" style="font-size:26px;color:var(--accent)">
-        delete_sweep</span>
-    </div>
-    <h3 id="confirm-modal-title" style="font-family:var(--font-display);
-      font-size:20px;font-weight:800;margin-bottom:6px"></h3>
-    <p id="confirm-modal-desc" style="font-size:14px;color:var(--muted);
-      line-height:1.6;margin-bottom:24px"></p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button onclick="closeConfirmModal()"
-        style="padding:15px;border-radius:var(--r-sm);
-        border:1.5px solid var(--border);background:var(--bg);
-        font-family:var(--font-display);font-size:15px;font-weight:700;
-        color:var(--muted);cursor:pointer">
-        Cancelar
-      </button>
-      <button id="confirm-modal-btn"
-        style="padding:15px;border-radius:var(--r-sm);border:none;
-        background:var(--accent);font-family:var(--font-display);
-        font-size:15px;font-weight:800;color:white;cursor:pointer;
-        transition:background .15s">
-        Confirmar
-      </button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
