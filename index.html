@@ -14,91 +14,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 
 <style>
-  /* ══ TELA DE CARREGAMENTO ══ */
-#splash-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 99998;
-  background: #0A0908;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  transition: opacity .4s ease, transform .4s ease;
-}
-#splash-screen.hiding {
-  opacity: 0;
-  transform: scale(1.04);
-  pointer-events: none;
-}
-.splash-logo {
-  font-family: var(--font-display);
-  font-size: 52px;
-  font-weight: 800;
-  color: white;
-  letter-spacing: -2px;
-  line-height: 1;
-  margin-bottom: 12px;
-  animation: splashIn .5s cubic-bezier(.22,1,.36,1) both;
-}
-.splash-logo em {
-  color: var(--accent);
-  font-style: normal;
-}
-.splash-tagline {
-  font-size: 13px;
-  color: rgba(255,255,255,.35);
-  font-weight: 300;
-  margin-bottom: 56px;
-  animation: splashIn .5s .08s cubic-bezier(.22,1,.36,1) both;
-}
-.splash-bar-wrap {
-  width: 120px;
-  height: 3px;
-  background: rgba(255,255,255,.08);
-  border-radius: 3px;
-  overflow: hidden;
-  animation: splashIn .4s .15s cubic-bezier(.22,1,.36,1) both;
-}
-.splash-bar {
-  height: 100%;
-  width: 0%;
-  background: var(--accent);
-  border-radius: 3px;
-  transition: width .3s ease;
-}
-.splash-status {
-  font-size: 11px;
-  color: rgba(255,255,255,.25);
-  margin-top: 14px;
-  letter-spacing: .04em;
-  min-height: 16px;
-  animation: splashIn .4s .2s cubic-bezier(.22,1,.36,1) both;
-}
-@keyframes splashIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-/* Bolha decorativa de fundo */
-#splash-screen::before {
-  content: '';
-  position: absolute;
-  top: -80px; right: -80px;
-  width: 320px; height: 320px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,61,46,.2) 0%, transparent 65%);
-  pointer-events: none;
-}
-#splash-screen::after {
-  content: '';
-  position: absolute;
-  bottom: -60px; left: -60px;
-  width: 240px; height: 240px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,61,46,.08) 0%, transparent 65%);
-  pointer-events: none;
-}
 :root {
   --accent:#FF3D2E;--accent-dark:#C42B1F;--accent-light:#FFF0EE;
   --bg:#F5F4F0;--surface:#FFFFFF;--dark:#131110;--muted:#8A8680;
@@ -629,15 +544,6 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 </style>
 </head>
 <body>
-  <!-- SPLASH SCREEN -->
-<div id="splash-screen">
-  <div class="splash-logo">Delivra<em>Tech</em></div>
-  <div class="splash-tagline">Peça, acompanhe e avalie</div>
-  <div class="splash-bar-wrap">
-    <div class="splash-bar" id="splash-bar"></div>
-  </div>
-  <div class="splash-status" id="splash-status">Iniciando…</div>
-</div>
 
 <!-- ONBOARDING -->
 <section id="onboarding" style="display:flex">
@@ -2139,69 +2045,16 @@ function toast(msg, type = 'success') {
 // ══════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════
-// ══ SPLASH SCREEN ══
-function setSplash(pct, msg) {
-  const bar = document.getElementById('splash-bar');
-  const status = document.getElementById('splash-status');
-  if (bar) bar.style.width = pct + '%';
-  if (status) status.textContent = msg;
-}
-
-function hideSplash() {
-  const el = document.getElementById('splash-screen');
-  if (!el) return;
-  el.classList.add('hiding');
-  setTimeout(() => { el.style.display = 'none'; }, 420);
-}
-
-window.addEventListener('DOMContentLoaded', async () => {
-  setSplash(15, 'Carregando interface…');
-
-  document.querySelectorAll('.page').forEach(p => {
-    p.style.display = 'none';
-    p.classList.remove('active');
-  });
-
-  setSplash(35, 'Verificando sessão…');
-  await new Promise(r => setTimeout(r, 250));
-
+window.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
   if (userProfile) {
-    setSplash(55, 'Autenticando conta…');
-    await new Promise(r => setTimeout(r, 200));
-
-    try {
-      const snap = await db.ref('suspensions/' + userProfile.id).once('value');
+    document.getElementById('onboarding').style.display = 'none';
+    db.ref('suspensions/' + userProfile.id).once('value').then(snap => {
       const data = snap.val();
-
-      setSplash(80, 'Verificando permissões…');
-      await new Promise(r => setTimeout(r, 180));
-
-      if (data && data.banned) {
-        setSplash(100, 'Concluído');
-        await new Promise(r => setTimeout(r, 200));
-        hideSplash();
-        showBannedScreen(data);
-        startBanWatcher();
-      } else {
-        setSplash(100, 'Tudo certo!');
-        await new Promise(r => setTimeout(r, 200));
-        hideSplash();
-        applyProfile();
-        const myId = localStorage.getItem('my_store_id');
-        if (myId) listenIncomingOrders(myId);
-      }
-    } catch (e) {
-      setSplash(100, 'Conectando…');
-      await new Promise(r => setTimeout(r, 200));
-      hideSplash();
-      applyProfile();
-    }
-  } else {
-    setSplash(100, 'Bem-vindo!');
-    await new Promise(r => setTimeout(r, 350));
-    hideSplash();
+      if (data && data.banned) { showBannedScreen(data); startBanWatcher(); }
+      else { applyProfile(); const myId = localStorage.getItem('my_store_id'); if (myId) listenIncomingOrders(myId); }
+    }).catch(() => { applyProfile(); });
   }
-
   initSuperAdminTrigger();
 });
 
