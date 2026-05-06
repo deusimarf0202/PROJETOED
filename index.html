@@ -532,6 +532,15 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 .sa-report-badge.open{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
 .sa-report-badge.resolved{background:rgba(26,158,94,.12);color:#1A9E5E;border:1px solid rgba(26,158,94,.25)}
 .sa-report-badge.dismissed{background:rgba(255,255,255,.06);color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.1)}
+/* Resposta de denúncia — precisa estar no CSS global */
+.sa-report-reply{background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:10px;padding:12px 14px;margin-top:10px}
+.sa-report-reply-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#60A5FA;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.sa-report-reply-text{font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
+.sa-report-reply-input{width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 14px;font-family:var(--font-body);font-size:13px;color:white;outline:none;resize:none;max-height:80px;line-height:1.4;margin-top:10px}
+.sa-report-reply-input::placeholder{color:rgba(255,255,255,.25)}
+.sa-report-reply-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.35);color:#60A5FA;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;margin-top:8px;transition:all .2s}
+.sa-report-reply-btn:hover{background:rgba(37,99,235,.35)}
+.sa-report-reply-btn .material-icons-round{font-size:14px}
 </style>
 </head>
 <body>
@@ -1103,7 +1112,8 @@ auth.getRedirectResult()
   });
 
 auth.onAuthStateChanged(firebaseUser => {
-  if (firebaseUser && !userProfile) {
+  // ALTERADO: verifica também se já está na tela de onboarding para evitar loop
+  if (firebaseUser && !userProfile && document.getElementById('onboarding').style.display !== 'none') {
     db.ref('suspensions/' + firebaseUser.uid).once('value').then(snap => {
       const data = snap.val();
       if (data && data.banned) { auth.signOut(); showBannedScreen(data); return; }
@@ -1559,8 +1569,9 @@ function openMenu(storeId) {
   currentStoreId = storeId;
   renderMenu(storeId);
   renderReviews(storeId);
-  injectReportBtn(storeId, storesData[storeId]?.name || '');
   pushPage('menu-view');
+  // ALTERADO: aguarda o DOM estar visível antes de injetar o botão
+  setTimeout(() => injectReportBtn(storeId, storesData[storeId]?.name || ''), 50);
 }
 
 function renderMenu(storeId) {
@@ -2284,23 +2295,7 @@ function restoreFromBan() {
   toast('✅ Acesso restaurado!');
 }
 
-async function liftBan(ownerId) {
-  if (!confirm('Levantar o banimento deste usuário?')) return;
 
-  // Zera completamente no Firebase
-  await db.ref('suspensions/' + ownerId).set({
-    banned: false,
-    count: 0,
-    history: [],
-    ownerName: (await db.ref('suspensions/' + ownerId + '/ownerName').once('value')).val() || 'Usuário'
-  });
-
-  toast('Banimento levantado');
-  renderSuspensionsList();
-
-  // Se o usuário banido É o usuário atual, o listener do startBanWatcher
-  // vai detectar a mudança automaticamente e chamar restoreFromBan()
-}
 
 
 function showBannedScreen(data) {
@@ -2337,18 +2332,6 @@ function showBannedScreen(data) {
 
 function trapBannedKeyboard(e) { if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) e.preventDefault(); }
 
-async function liftBan(ownerId) {
-  if (!confirm('Levantar o banimento deste usuário?')) return;
-  const nameSnap = await db.ref('suspensions/' + ownerId + '/ownerName').once('value');
-  await db.ref('suspensions/' + ownerId).set({
-    banned: false,
-    count: 0,
-    history: [],
-    ownerName: nameSnap.val() || 'Usuário'
-  });
-  toast('Banimento levantado');
-  renderSuspensionsList();
-}
 
 async function liftBan(ownerId) {
   if (!confirm('Levantar o banimento deste usuário?')) return;
@@ -2468,6 +2451,10 @@ function renderSAPanel() {
 }
 
 function openSAStores() {
+  if (saConvListener) { db.ref('support').off('value', saConvListener); saConvListener = null; }
+  if (saChatMsgListener && saActiveChatConvId) { db.ref('support/' + saActiveChatConvId + '/messages').off('value', saChatMsgListener); saChatMsgListener = null; }
+  saActiveChatConvId = null; saActiveChatUserId = null; saActiveChatUserName = null;
+
   saCurrentPanel = 'stores';
   const body = document.getElementById('sa-body-content');
   const saTitle = document.getElementById('sa-panel-title');
