@@ -1457,7 +1457,7 @@ function tryGetLocation() {
     userLng = pos.coords.longitude;
     document.getElementById('hero-sub').textContent = '📍 Restaurantes perto de você';
     renderHome();
-  }, () => {}, { timeout: 8000, maximumAge: 300000 });
+  }, () => {}, { timeout: 8000, maximumAge: 300000 });    
 }
 
 function isOpenNow(openTime, closeTime) {
@@ -3252,12 +3252,15 @@ function clearSupportHistory() {
   });
 }
 
-// ══ LIMPAR HISTÓRICOS (SUPER ADMIN) ══
-
 async function clearAllReviews() {
   const count = Object.values(storesData)
     .reduce((a, s) => a + Object.keys(s.reviews || {}).length, 0);
-  if (!count) { toast('Nenhuma avaliação para remover'); return; }
+
+  if (!count) { 
+    toast('Nenhuma avaliação para remover'); 
+    return; 
+  }
+
   showConfirmModal({
     title: 'Apagar todas as avaliações?',
     desc: `${count} avaliações serão removidas permanentemente.`,
@@ -3266,19 +3269,22 @@ async function clearAllReviews() {
     iconName: 'star_border',
     iconBg: 'var(--warn-bg)',
     iconColor: 'var(--warn)',
+
     onConfirm: async () => {
       const updates = {};
 
+      Object.values(storesData).forEach(s => {
+        if (s.reviews && Object.keys(s.reviews).length) {
+          updates['stores/' + s.id + '/reviews'] = null;
+        }
+      });
+
+      await db.ref().update(updates);
+
+      toast(`🗑️ ${count} avaliações removidas`);
+      renderSuperAdminStores();
     }
   });
-}
-  Object.values(storesData).forEach(s => {
-    if (s.reviews && Object.keys(s.reviews).length)
-      updates['stores/' + s.id + '/reviews'] = null;
-  });
-  await db.ref().update(updates);
-  toast(`🗑️ ${count} avaliações removidas`);
-  renderSuperAdminStores();
 }
 
 async function clearAllOrders() {
