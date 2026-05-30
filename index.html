@@ -2818,7 +2818,11 @@ async function loadSAReports() {
     if (!reports.length) {
       el.innerHTML = `<div style="text-align:center;padding:48px 20px;color:rgba(255,255,255,.3)"><span class="material-icons-round" style="font-size:48px;display:block;margin-bottom:12px;opacity:.3">flag</span>Nenhuma denúncia ainda</div>`;
       return;
-    }
+    } catch {
+      el.innerHTML = `<div style="text-align:center;padding:48px 20px;color:rgba(255,255,255,.3)"><span class="material-icons-round" style="font-size:48px;display:block;margin-bottom:12px;opacity:.3">flag</span>Nenhuma denúncia ainda</div>`;
+      return;
+  }
+}
 
 
 async function updateReportStatus(reportId, status) {
